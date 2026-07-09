@@ -471,7 +471,7 @@ body {
   padding: 40px;
   font-family: var(--font-sans);
   font-size: 1.1rem;
-  line-height: 1.7;
+  line-height: 1.15;
   color: var(--text-main);
   background-color: var(--bg-app);
   overflow-y: auto;
@@ -494,7 +494,7 @@ body {
 /* Markdown Rendering Custom Styles */
 .markdown-body {
   font-family: inherit;
-  line-height: 1.6;
+  line-height: 1.15;
   color: var(--text-main);
   font-size: 1.05rem;
 }
@@ -518,7 +518,7 @@ body {
 .markdown-body h3 { font-size: 1.3rem; }
 
 .markdown-body p {
-  margin-bottom: 0.5em;
+  margin-bottom: 1.8em;
 }
 
 .markdown-body blockquote {
@@ -531,7 +531,7 @@ body {
 }
 
 .markdown-body blockquote p {
-  margin-bottom: 0.5em;
+  margin-bottom: 0.9em;
 }
 
 .markdown-body blockquote p:last-child {

@@ -67,7 +67,15 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchTree();
+    const init = async () => {
+      await fetchTree();
+      const savedPath = localStorage.getItem('notes-selected-path');
+      if (savedPath) {
+        handleSelectNote(savedPath);
+      }
+    };
+    init();
+
     // Load theme from localStorage
     const savedTheme = localStorage.getItem('notes-theme') as Theme;
     if (savedTheme) {
@@ -107,6 +115,7 @@ export default function Dashboard() {
 
     setLoadingNote(true);
     setSelectedPath(path);
+    localStorage.setItem('notes-selected-path', path);
     setSaveStatus('saved');
 
     try {
@@ -251,6 +260,7 @@ export default function Dashboard() {
         await fetchTree();
         if (selectedPath === targetPath) {
           setSelectedPath(null);
+          localStorage.removeItem('notes-selected-path');
           setNoteContent('');
         }
       } else {

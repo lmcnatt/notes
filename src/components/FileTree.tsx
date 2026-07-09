@@ -64,6 +64,17 @@ export default function FileTree({
   const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
+    const saved = localStorage.getItem('notes-expanded-folders');
+    if (saved) {
+      try {
+        setExpandedFolders(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     const handleGlobalClick = () => {
       setActiveEmojiPickerPath(null);
     };
@@ -149,10 +160,11 @@ export default function FileTree({
   };
 
   const toggleFolder = (path: string) => {
-    setExpandedFolders(prev => ({
-      ...prev,
-      [path]: !prev[path]
-    }));
+    setExpandedFolders(prev => {
+      const next = { ...prev, [path]: !prev[path] };
+      localStorage.setItem('notes-expanded-folders', JSON.stringify(next));
+      return next;
+    });
   };
 
   const startRename = (node: FileNode, e: React.MouseEvent) => {
