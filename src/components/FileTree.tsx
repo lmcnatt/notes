@@ -4,6 +4,7 @@ import {
   FolderOpen, 
   FileText, 
   Plus, 
+  FolderPlus,
   Trash, 
   Edit3, 
   ChevronRight, 
@@ -102,10 +103,17 @@ export default function FileTree({
             <div className="node-actions" onClick={e => e.stopPropagation()}>
               <button 
                 className="node-action-btn"
-                title="Create file"
+                title="New Note"
                 onClick={() => onCreateItem('file', node.relativePath)}
               >
                 <Plus size={14} />
+              </button>
+              <button 
+                className="node-action-btn"
+                title="New Subfolder"
+                onClick={() => onCreateItem('directory', node.relativePath)}
+              >
+                <FolderPlus size={14} />
               </button>
               <button 
                 className="node-action-btn"

@@ -324,6 +324,30 @@ export default function Dashboard() {
     }
   };
 
+  const getActiveFolder = (): string => {
+    if (!selectedPath) return '';
+    
+    const findNode = (nodes: FileNode[], target: string): FileNode | null => {
+      for (const node of nodes) {
+        if (node.relativePath === target) return node;
+        if (node.children) {
+          const found = findNode(node.children, target);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const node = findNode(tree, selectedPath);
+    if (node?.isDirectory) {
+      return selectedPath;
+    }
+    
+    const lastSlash = selectedPath.lastIndexOf('/');
+    if (lastSlash === -1) return '';
+    return selectedPath.substring(0, lastSlash);
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', color: 'var(--text-muted)' }}>
@@ -429,7 +453,7 @@ export default function Dashboard() {
               <button 
                 className="action-btn"
                 onClick={() => {
-                  setTargetPath('');
+                  setTargetPath(getActiveFolder());
                   setModalType('create_file');
                 }}
               >
@@ -439,7 +463,7 @@ export default function Dashboard() {
               <button 
                 className="action-btn"
                 onClick={() => {
-                  setTargetPath('');
+                  setTargetPath(getActiveFolder());
                   setModalType('create_folder');
                 }}
               >
