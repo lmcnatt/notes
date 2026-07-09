@@ -9,8 +9,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const project = searchParams.get('project') || 'My Book';
+
     const metadata = getAllNodeMetadata(username);
-    const tree = getNotesTree(username, '', metadata);
+    const tree = getNotesTree(username, project, metadata);
     return NextResponse.json({ tree, username });
   } catch (error: any) {
     console.error('Failed to get notes tree:', error);

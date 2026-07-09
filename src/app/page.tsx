@@ -11,7 +11,9 @@ import {
   Moon, 
   Coffee,
   Loader,
-  Menu
+  Menu,
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 import FileTree from '@/components/FileTree';
 import EditorArea from '@/components/EditorArea';
@@ -35,6 +37,10 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<Theme>('sepia');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeProject, setActiveProject] = useState<string>('My Book');
+  const [projects, setProjects] = useState<string[]>(['My Book']);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [projectInput, setProjectInput] = useState('');
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,10 +56,23 @@ export default function Dashboard() {
   const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);
   const latestContent = useRef<string>('');
 
-  // Fetch file tree and user info on mount
-  const fetchTree = async () => {
+  // Fetch projects list
+  const fetchProjects = async () => {
     try {
-      const res = await fetch('/api/notes');
+      const res = await fetch('/api/notes/projects');
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data.projects || ['My Book']);
+      }
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+    }
+  };
+
+  // Fetch file tree and user info on mount
+  const fetchTree = async (project = activeProject) => {
+    try {
+      const res = await fetch(`/api/notes?project=${encodeURIComponent(project)}`);
       if (res.status === 401) {
         router.push('/login');
         return;
@@ -70,7 +89,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     const init = async () => {
-      await fetchTree();
+      const savedProj = localStorage.getItem('notes-active-project') || 'My Book';
+      setActiveProject(savedProj);
+      
+      await fetchProjects();
+      await fetchTree(savedProj);
+      
       const savedPath = localStorage.getItem('notes-selected-path');
       if (savedPath) {
         handleSelectNote(savedPath);
@@ -91,6 +115,70 @@ export default function Dashboard() {
     setTheme(newTheme);
     localStorage.setItem('notes-theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  const handleSwitchProject = async (project: string) => {
+    if (saveStatus === 'unsaved' && selectedPath) {
+      await saveNoteContent(selectedPath, latestContent.current);
+    }
+    setActiveProject(project);
+    localStorage.setItem('notes-active-project', project);
+    setSelectedPath(null);
+    localStorage.removeItem('notes-selected-path');
+    setNoteContent('');
+    await fetchTree(project);
+    setShowProjectModal(false);
+  };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectInput.trim()) return;
+    try {
+      const res = await fetch('/api/notes/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: projectInput.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await fetchProjects();
+        setProjectInput('');
+        await handleSwitchProject(data.name);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to create project');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteProject = async (project: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (project === 'My Book') {
+      alert('Cannot delete default project.');
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete the book/project "${project}" and all its notes?`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/notes/projects', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: project }),
+      });
+      if (res.ok) {
+        await fetchProjects();
+        if (activeProject === project) {
+          await handleSwitchProject('My Book');
+        }
+      } else {
+        alert('Failed to delete project');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Open note and load content
@@ -422,32 +510,45 @@ export default function Dashboard() {
           transition-transform duration-200 ease-in-out
         `}
       >
-        <div className="flex items-center justify-between p-4 border-b border-border-theme bg-sidebar-bg">
-          <div className="text-lg font-bold font-serif text-accent tracking-tight">McNatt Notes</div>
-          
-          <div className="flex gap-1">
-            <button 
-              className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'sepia' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
-              onClick={() => handleThemeChange('sepia')}
-              title="Sepia Mode"
-            >
-              <Coffee size={14} />
-            </button>
-            <button 
-              className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'light' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
-              onClick={() => handleThemeChange('light')}
-              title="Light Mode"
-            >
-              <Sun size={14} />
-            </button>
-            <button 
-              className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'dark' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
-              onClick={() => handleThemeChange('dark')}
-              title="Dark Mode"
-            >
-              <Moon size={14} />
-            </button>
+        <div className="flex flex-col p-4 border-b border-border-theme bg-sidebar-bg gap-2">
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-bold font-serif text-accent tracking-tight">McNatt Notes</div>
+            <div className="flex gap-1">
+              <button 
+                className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'sepia' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
+                onClick={() => handleThemeChange('sepia')}
+                title="Sepia Mode"
+              >
+                <Coffee size={14} />
+              </button>
+              <button 
+                className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'light' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
+                onClick={() => handleThemeChange('light')}
+                title="Light Mode"
+              >
+                <Sun size={14} />
+              </button>
+              <button 
+                className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'dark' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
+                onClick={() => handleThemeChange('dark')}
+                title="Dark Mode"
+              >
+                <Moon size={14} />
+              </button>
+            </div>
           </div>
+
+          {/* Project/Book Switcher Button */}
+          <button 
+            onClick={() => setShowProjectModal(true)}
+            className="flex items-center justify-between w-full px-3 py-2 bg-card-bg border border-border-theme/60 hover:border-accent hover:bg-card-hover rounded-lg text-xs font-bold text-text-main transition shadow-sm"
+          >
+            <span className="truncate flex items-center gap-2">
+              <span className="text-accent">📚</span>
+              {activeProject}
+            </span>
+            <ChevronDown size={14} className="text-text-muted opacity-80" />
+          </button>
         </div>
 
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-theme bg-sidebar-bg/50">
@@ -644,6 +745,71 @@ export default function Dashboard() {
               </div>
             </form>
           )}
+        </div>
+      )}
+
+      {/* Project Switcher Modal */}
+      {showProjectModal && (
+        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card-bg border border-border-theme w-full max-w-md rounded-xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-lg font-bold text-text-main flex items-center justify-between">
+              <span>My Books & Projects</span>
+              <button 
+                className="text-xs font-semibold text-text-muted hover:text-text-main"
+                onClick={() => setShowProjectModal(false)}
+              >
+                Close
+              </button>
+            </div>
+            
+            <div className="max-h-48 overflow-y-auto border border-border-theme/40 rounded-lg p-1.5 space-y-1 bg-app-bg/25">
+              {projects.map(proj => (
+                <div 
+                  key={proj}
+                  onClick={() => handleSwitchProject(proj)}
+                  className={`
+                    flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition select-none
+                    ${proj === activeProject ? 'bg-accent text-white font-semibold' : 'hover:bg-card-hover text-text-main'}
+                  `}
+                >
+                  <span className="truncate text-sm flex items-center gap-2">
+                    <span>📖</span>
+                    {proj}
+                  </span>
+                  
+                  {proj !== 'My Book' && (
+                    <button
+                      onClick={(e) => handleDeleteProject(proj, e)}
+                      className={`p-1 rounded transition ${proj === activeProject ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'}`}
+                      title="Delete book"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleCreateProject} className="space-y-2 pt-2 border-t border-border-theme/40">
+              <label className="text-xs font-semibold text-text-muted">Start a New Book / Project</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
+                  placeholder="e.g. My Sci-Fi Novel"
+                  value={projectInput}
+                  onChange={e => setProjectInput(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shadow-sm"
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
