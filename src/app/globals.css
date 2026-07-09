@@ -871,4 +871,14 @@ body {
   transform: scale(1.15);
 }
 
+.folder-icon-trigger {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.folder-icon-trigger:hover {
+  background-color: var(--border);
+  transform: scale(1.1);
+}
+
+
 

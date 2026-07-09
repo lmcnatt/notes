@@ -196,7 +196,14 @@ export default function FileTree({
               <ChevronRight size={16} className="text-muted" />
             )}
             
-            {getFolderIcon(node, isExpanded)}
+            <span 
+              onClick={(e) => toggleEmojiPicker(node.relativePath, e)}
+              className="folder-icon-trigger"
+              style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', padding: '2px', borderRadius: '4px' }}
+              title="Click to change folder icon/emoji"
+            >
+              {getFolderIcon(node, isExpanded)}
+            </span>
             
             {isEditing ? (
               <input
@@ -231,13 +238,7 @@ export default function FileTree({
               >
                 <FolderPlus size={14} />
               </button>
-              <button 
-                className="node-action-btn"
-                title="Select Emoji"
-                onClick={(e) => toggleEmojiPicker(node.relativePath, e)}
-              >
-                <Smile size={14} />
-              </button>
+
               <button 
                 className="node-action-btn"
                 title="Rename folder"
@@ -335,34 +336,57 @@ export default function FileTree({
           className="emoji-picker-popup"
           style={{
             position: 'fixed',
-            left: `${Math.min(window.innerWidth - 220, pickerPosition.x)}px`,
-            top: `${Math.min(window.innerHeight - 150, pickerPosition.y + 10)}px`,
+            left: `${Math.min(window.innerWidth - 240, pickerPosition.x)}px`,
+            top: `${Math.min(window.innerHeight - 250, pickerPosition.y + 10)}px`,
             zIndex: 2000,
             backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border)',
             borderRadius: '8px',
-            padding: '10px',
+            padding: '12px',
             boxShadow: 'var(--shadow)',
-            width: '200px',
+            width: '220px',
             display: 'flex',
-            flexWrap: 'wrap',
-            gap: '6px',
-            justifyContent: 'center'
+            flexDirection: 'column',
+            gap: '10px'
           }}
           onClick={e => e.stopPropagation()}
         >
-          {['📖', '📚', '✍️', '📂', '💡', '📝', '📓', '🎨', '🎭', '🎬', '🚀', '📅', '📌', '📁', '❤️', '🔍', '⭐', '🔥'].map(emoji => (
-            <button
-              key={emoji}
-              style={{ fontSize: '20px', padding: '4px', borderRadius: '4px' }}
-              onClick={() => handleSelectEmoji(activeEmojiPickerPath, emoji)}
-              className="emoji-select-btn"
-            >
-              {emoji}
-            </button>
-          ))}
+          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+            Set Folder Icon (Emoji)
+          </div>
+          
+          <input
+            type="text"
+            placeholder="Type or paste emoji..."
+            className="form-input"
+            style={{ fontSize: '1rem', padding: '6px 10px', textAlign: 'center', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border)', borderRadius: '6px' }}
+            onChange={(e) => {
+              const val = e.target.value.trim();
+              if (val) {
+                handleSelectEmoji(activeEmojiPickerPath, val);
+              }
+            }}
+            autoFocus
+          />
+          
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.4' }}>
+            Tip: Press <b>Win + .</b> or <b>Cmd + Ctrl + Space</b> to open system emoji panel
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
+            {['📖', '📚', '✍️', '📂', '💡', '📝', '📓', '🎨', '🎭', '🎬', '🚀', '📅', '📌', '📁', '❤️', '🔍', '⭐', '🔥'].map(emoji => (
+              <button
+                key={emoji}
+                style={{ fontSize: '18px', padding: '3px', borderRadius: '4px' }}
+                onClick={() => handleSelectEmoji(activeEmojiPickerPath, emoji)}
+                className="emoji-select-btn"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
           <button
-            style={{ width: '100%', fontSize: '0.8rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '6px', marginTop: '4px' }}
+            style={{ width: '100%', fontSize: '0.8rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '6px', marginTop: '2px' }}
             onClick={() => handleSelectEmoji(activeEmojiPickerPath, '')}
           >
             Remove Icon
