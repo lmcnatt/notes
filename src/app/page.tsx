@@ -10,7 +10,8 @@ import {
   Sun, 
   Moon, 
   Coffee,
-  Loader
+  Loader,
+  Menu
 } from 'lucide-react';
 import FileTree from '@/components/FileTree';
 import EditorArea from '@/components/EditorArea';
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [theme, setTheme] = useState<Theme>('sepia');
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,6 +119,7 @@ export default function Dashboard() {
     setSelectedPath(path);
     localStorage.setItem('notes-selected-path', path);
     setSaveStatus('saved');
+    setSidebarOpen(false);
 
     try {
       const res = await fetch(`/api/notes/content?path=${encodeURIComponent(path)}`);
@@ -384,9 +387,43 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard-layout">
+    <div className="relative flex w-screen h-screen overflow-hidden bg-app">
+      {/* Mobile Top Navigation Header */}
+      <div 
+        className="lg:hidden flex items-center justify-between w-full h-14 px-4 border-b border-border z-30 absolute top-0 left-0"
+        style={{ backgroundColor: 'var(--bg-sidebar)' }}
+      >
+        <button 
+          onClick={() => setSidebarOpen(true)}
+          className="p-2 -ml-2 rounded-lg text-main hover:bg-card-hover"
+          title="Open Menu"
+        >
+          <Menu size={20} />
+        </button>
+        <span className="font-semibold text-main text-sm truncate max-w-[200px]">
+          {selectedPath ? selectedPath.split('/').pop()?.replace('.md', '') : 'McNatt Notes'}
+        </span>
+        <div className="w-8 h-8" />
+      </div>
+
+      {/* Sidebar Backdrop Overlay (Mobile only) */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-200"
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="sidebar">
+      <div 
+        className={`
+          sidebar
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          fixed lg:relative inset-y-0 left-0 z-50 lg:z-10
+          max-w-[85vw]
+          transition-transform duration-200 ease-in-out
+        `}
+      >
         <div className="sidebar-header">
           <div className="sidebar-brand">McNatt Notes</div>
           
@@ -520,7 +557,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Workspace */}
-      <div className="workspace">
+      <div className="workspace flex-1 pt-14 lg:pt-0">
         {selectedPath ? (
           loadingNote ? (
             <div className="empty-state">

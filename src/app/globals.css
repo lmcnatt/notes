@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap');
+@import "tailwindcss";
+
 
 :root {
   /* Default Cozy Sepia theme */
@@ -688,11 +690,26 @@ body {
   background-color: var(--border);
 }
 
-/* Split screen config for editing and preview side by side */
 .split-pane-layout {
   display: flex;
   width: 100%;
   height: 100%;
+}
+
+@media (max-width: 1024px) {
+  .split-pane-layout {
+    flex-direction: column !important;
+  }
+  .split-pane-layout .editor-pane,
+  .split-pane-layout .preview-pane {
+    flex: 1 !important;
+    width: 100% !important;
+    height: 50% !important;
+  }
+  .split-pane-layout .preview-pane {
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+  }
 }
 
 /* Live Preview Mode Styling (Obsidian style - Focus to edit) */
