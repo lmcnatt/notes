@@ -21,6 +21,33 @@ interface EditorAreaProps {
 type EditMode = 'source' | 'split' | 'live';
 type FontStyle = 'sans' | 'serif';
 
+const getLineClasses = (lines: string[]): string[] => {
+  const classes: string[] = [];
+  let inBlockquote = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let lineClass = "live-editor-line";
+    
+    if (line.startsWith('> ')) {
+      inBlockquote = true;
+      lineClass += " live-blockquote";
+    } else if (inBlockquote && line.trim() !== '' && !line.startsWith('#')) {
+      lineClass += " live-blockquote";
+    } else {
+      inBlockquote = false;
+    }
+    
+    if (line.startsWith('# ')) lineClass += " live-h1";
+    else if (line.startsWith('## ')) lineClass += " live-h2";
+    else if (line.startsWith('### ')) lineClass += " live-h3";
+    
+    classes.push(lineClass);
+  }
+  
+  return classes;
+};
+
 const WYSIWYGEditor = ({ 
   content, 
   onChange, 
@@ -37,13 +64,9 @@ const WYSIWYGEditor = ({
   useEffect(() => {
     if (editorRef.current && !isEditing.current) {
       const lines = content.split('\n');
-      const html = lines.map(line => {
-        let lineClass = "live-editor-line";
-        if (line.startsWith('# ')) lineClass += " live-h1";
-        else if (line.startsWith('## ')) lineClass += " live-h2";
-        else if (line.startsWith('### ')) lineClass += " live-h3";
-        else if (line.startsWith('> ')) lineClass += " live-blockquote";
-        return `<div class="${lineClass}">${line === '' ? '<br>' : line}</div>`;
+      const classes = getLineClasses(lines);
+      const html = lines.map((line, index) => {
+        return `<div class="${classes[index]}">${line === '' ? '<br>' : line}</div>`;
       }).join('');
       editorRef.current.innerHTML = html;
     }
@@ -53,20 +76,13 @@ const WYSIWYGEditor = ({
     isEditing.current = true;
     
     const container = e.currentTarget;
+    const children = Array.from(container.children) as HTMLElement[];
+    const lines = children.map(child => child.innerText || '');
+    const classes = getLineClasses(lines);
     
-    // Dynamically update class names of DOM children based on markdown prefixes
-    Array.from(container.children).forEach(child => {
-      const el = child as HTMLElement;
-      const text = el.innerText || '';
-      
-      let lineClass = "live-editor-line";
-      if (text.startsWith('# ')) lineClass += " live-h1";
-      else if (text.startsWith('## ')) lineClass += " live-h2";
-      else if (text.startsWith('### ')) lineClass += " live-h3";
-      else if (text.startsWith('> ')) lineClass += " live-blockquote";
-      
-      if (el.className !== lineClass) {
-        el.className = lineClass;
+    children.forEach((child, index) => {
+      if (child.className !== classes[index]) {
+        child.className = classes[index];
       }
     });
 
