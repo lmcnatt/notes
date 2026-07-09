@@ -13,7 +13,8 @@ import {
   Loader,
   Menu,
   ChevronDown,
-  Trash2
+  Trash2,
+  FileEdit
 } from 'lucide-react';
 import FileTree from '@/components/FileTree';
 import EditorArea from '@/components/EditorArea';
@@ -38,9 +39,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<string>('My Book');
-  const [projects, setProjects] = useState<string[]>(['My Book']);
+  const [projects, setProjects] = useState<{ name: string; emoji: string }[]>([]);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [projectInput, setProjectInput] = useState('');
+  const [editingProject, setEditingProject] = useState<{ name: string; emoji: string } | null>(null);
+  const [editNameInput, setEditNameInput] = useState('');
+  const [editEmojiInput, setEditEmojiInput] = useState('');
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,7 +66,7 @@ export default function Dashboard() {
       const res = await fetch('/api/notes/projects');
       if (res.ok) {
         const data = await res.json();
-        setProjects(data.projects || ['My Book']);
+        setProjects(data.projects || []);
       }
     } catch (err) {
       console.error('Failed to load projects:', err);
@@ -147,6 +151,38 @@ export default function Dashboard() {
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to create project');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditProjectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject) return;
+    if (!editNameInput.trim()) return;
+    try {
+      const res = await fetch('/api/notes/projects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          oldName: editingProject.name, 
+          newName: editNameInput.trim(),
+          emoji: editEmojiInput
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await fetchProjects();
+        if (activeProject === editingProject.name) {
+          setActiveProject(data.name);
+          localStorage.setItem('notes-active-project', data.name);
+          await fetchTree(data.name);
+        }
+        setEditingProject(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to edit project');
       }
     } catch (err) {
       console.error(err);
@@ -544,25 +580,16 @@ export default function Dashboard() {
             className="flex items-center justify-between w-full px-3 py-2 bg-card-bg border border-border-theme/60 hover:border-accent hover:bg-card-hover rounded-lg text-xs font-bold text-text-main transition shadow-sm"
           >
             <span className="truncate flex items-center gap-2">
-              <span className="text-accent">📚</span>
+              <span className="text-accent text-sm">
+                {projects.find(p => p.name === activeProject)?.emoji || '📚'}
+              </span>
               {activeProject}
             </span>
             <ChevronDown size={14} className="text-text-muted opacity-80" />
           </button>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-theme bg-sidebar-bg/50">
-          <div className="user-info">
-            <span className="text-xs font-semibold text-text-muted">@{username}</span>
-          </div>
-          <button 
-            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-text-muted hover:text-text-main border border-border-theme/60 hover:bg-card-bg rounded-lg transition"
-            onClick={handleLogout}
-          >
-            <LogOut size={12} />
-            Logout
-          </button>
-        </div>
+
 
         {/* Global Search */}
         <div className="p-4 border-b border-border-theme bg-sidebar-bg/20">
@@ -656,6 +683,23 @@ export default function Dashboard() {
             />
           </>
         )}
+        
+        {/* User profile / Logout at the bottom */}
+        <div className="mt-auto border-t border-border-theme bg-sidebar-bg/50 px-4 py-3 flex items-center justify-between z-10 select-none">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
+              {username ? username[0].toUpperCase() : 'U'}
+            </div>
+            <span className="text-xs font-semibold text-text-muted">@{username}</span>
+          </div>
+          <button 
+            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-text-muted hover:text-text-main border border-border-theme/60 hover:bg-card-bg rounded-lg transition"
+            onClick={handleLogout}
+          >
+            <LogOut size={12} />
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Workspace */}
@@ -756,7 +800,10 @@ export default function Dashboard() {
               <span>My Books & Projects</span>
               <button 
                 className="text-xs font-semibold text-text-muted hover:text-text-main"
-                onClick={() => setShowProjectModal(false)}
+                onClick={() => {
+                  setShowProjectModal(false);
+                  setEditingProject(null);
+                }}
               >
                 Close
               </button>
@@ -765,50 +812,121 @@ export default function Dashboard() {
             <div className="max-h-48 overflow-y-auto border border-border-theme/40 rounded-lg p-1.5 space-y-1 bg-app-bg/25">
               {projects.map(proj => (
                 <div 
-                  key={proj}
-                  onClick={() => handleSwitchProject(proj)}
+                  key={proj.name}
+                  onClick={() => handleSwitchProject(proj.name)}
                   className={`
                     flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition select-none
-                    ${proj === activeProject ? 'bg-accent text-white font-semibold' : 'hover:bg-card-hover text-text-main'}
+                    ${proj.name === activeProject ? 'bg-accent text-white font-semibold' : 'hover:bg-card-hover text-text-main'}
                   `}
                 >
                   <span className="truncate text-sm flex items-center gap-2">
-                    <span>📖</span>
-                    {proj}
+                    <span className="text-base select-none">{proj.emoji || '📖'}</span>
+                    {proj.name}
                   </span>
                   
-                  {proj !== 'My Book' && (
+                  <div className="flex items-center gap-1.5">
                     <button
-                      onClick={(e) => handleDeleteProject(proj, e)}
-                      className={`p-1 rounded transition ${proj === activeProject ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'}`}
-                      title="Delete book"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingProject(proj);
+                        setEditNameInput(proj.name);
+                        setEditEmojiInput(proj.emoji || '');
+                      }}
+                      className={`p-1 rounded transition ${proj.name === activeProject ? 'text-white/85 hover:text-white hover:bg-white/15' : 'text-text-muted hover:text-accent hover:bg-card-hover'}`}
+                      title="Edit book settings"
                     >
-                      <Trash2 size={12} />
+                      <FileEdit size={12} />
                     </button>
-                  )}
+                    {proj.name !== 'My Book' && (
+                      <button
+                        onClick={(e) => handleDeleteProject(proj.name, e)}
+                        className={`p-1 rounded transition ${proj.name === activeProject ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'}`}
+                        title="Delete book"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
 
-            <form onSubmit={handleCreateProject} className="space-y-2 pt-2 border-t border-border-theme/40">
-              <label className="text-xs font-semibold text-text-muted">Start a New Book / Project</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  className="flex-1 px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
-                  placeholder="e.g. My Sci-Fi Novel"
-                  value={projectInput}
-                  onChange={e => setProjectInput(e.target.value)}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shadow-sm"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
+            {editingProject ? (
+              <form onSubmit={handleEditProjectSubmit} className="space-y-3 pt-2 border-t border-border-theme/40">
+                <div className="text-xs font-bold text-accent uppercase tracking-wider">Edit Book / Project</div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-muted uppercase">Book Emoji</label>
+                  <div className="flex flex-wrap gap-1.5 p-1.5 bg-app-bg/40 border border-border-theme/60 rounded-lg">
+                    {['📚', '📖', '📓', '✍️', '🖋️', '🧠', '🎨', '📜', '🔮', '⚔️', '🚀', '🕵️'].map(emo => (
+                      <button
+                        key={emo}
+                        type="button"
+                        onClick={() => setEditEmojiInput(emo)}
+                        className={`w-7 h-7 flex items-center justify-center rounded text-base hover:bg-card-hover transition ${editEmojiInput === emo ? 'bg-accent/20 border border-accent/50 text-accent font-semibold' : ''}`}
+                      >
+                        {emo}
+                      </button>
+                    ))}
+                    <input
+                      type="text"
+                      maxLength={2}
+                      className="w-10 h-7 text-center bg-card-bg border border-border-theme rounded text-sm focus:outline-none"
+                      placeholder="Custom"
+                      value={editEmojiInput}
+                      onChange={e => setEditEmojiInput(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-muted uppercase">Book Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
+                    placeholder="Book Name"
+                    value={editNameInput}
+                    onChange={e => setEditNameInput(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingProject(null)}
+                    className="px-3 py-1.5 text-xs font-semibold text-text-muted hover:text-text-main transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shadow-sm"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleCreateProject} className="space-y-2 pt-2 border-t border-border-theme/40">
+                <label className="text-xs font-semibold text-text-muted">Start a New Book / Project</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
+                    placeholder="e.g. My Sci-Fi Novel"
+                    value={projectInput}
+                    onChange={e => setProjectInput(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shadow-sm"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
