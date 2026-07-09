@@ -1,5 +1,5 @@
 #!/bin/bash
-# Backup script for Mcnatt Notes & Codebase
+# Backup script for McNatt Notes & Codebase
 
 echo "=== Backing up Notes ==="
 cd /mnt/mcnatt-storage/notes

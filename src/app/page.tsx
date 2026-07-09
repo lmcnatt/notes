@@ -337,7 +337,7 @@ export default function Dashboard() {
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <div className="sidebar-brand">Mcnatt Notes</div>
+          <div className="sidebar-brand">McNatt Notes</div>
           
           <div className="theme-selector">
             <button 

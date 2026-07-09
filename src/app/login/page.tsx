@@ -44,14 +44,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)] p-4 sm:p-6">
-      <div className="flex w-full max-w-md flex-col gap-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow)] sm:p-10">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <div className="[font-family:var(--font-serif)] text-[2rem] font-bold tracking-tight text-[var(--accent)] sm:text-[2.2rem]">
-            Mcnatt Notes
-          </div>
-          <h1 className="text-lg font-semibold text-[var(--text-main)] sm:text-xl">Welcome Back</h1>
-          <p className="text-sm text-[var(--text-muted)]">Sign in to continue writing your books</p>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">McNatt Notes</div>
+          <h1 className="auth-title">Welcome Back</h1>
+          <p className="auth-subtitle">Sign in to continue writing your books</p>
         </div>
 
         {error && (
