@@ -786,3 +786,78 @@ body {
 .dialog-btn.confirm:hover {
   background-color: var(--accent-hover);
 }
+
+/* Live Editor (WYSIWYG-like inline) */
+.live-preview-container-new {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background-color: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-editor-line {
+  outline: none;
+  min-height: 1.5em;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1.8;
+  font-family: inherit;
+  transition: background-color 0.15s;
+  white-space: pre-wrap;
+}
+
+.live-editor-line:hover {
+  background-color: var(--bg-app);
+}
+
+.live-editor-line:focus {
+  background-color: var(--bg-app);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.live-editor-line.live-h1 {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.live-editor-line.live-h2 {
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+}
+
+.live-editor-line.live-h3 {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+}
+
+.live-editor-line.live-blockquote {
+  border-left: 4px solid var(--accent);
+  padding: 8px 20px;
+  color: var(--text-muted);
+  background-color: var(--bg-sidebar);
+  border-radius: 0 4px 4px 0;
+  margin: 0.8em 0;
+}
+
+.live-editor-line.live-list-item {
+  position: relative;
+  padding-left: 20px;
+}
+

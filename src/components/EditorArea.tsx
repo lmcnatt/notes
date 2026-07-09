@@ -21,6 +21,134 @@ interface EditorAreaProps {
 type EditMode = 'source' | 'split' | 'live';
 type FontStyle = 'sans' | 'serif';
 
+const LiveEditor = ({ 
+  content, 
+  onChange, 
+  fontStyle 
+}: { 
+  content: string; 
+  onChange: (val: string) => void; 
+  fontStyle: string;
+}) => {
+  const lines = content.split('\n');
+  const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
+  
+  useEffect(() => {
+    lineRefs.current = lineRefs.current.slice(0, lines.length);
+  }, [lines.length]);
+
+  const handleLineChange = (index: number, newText: string) => {
+    const newLines = [...lines];
+    newLines[index] = newText.replace(/<br>/g, '').replace(/\r/g, '');
+    onChange(newLines.join('\n'));
+  };
+
+  const focusLine = (index: number, atStart: boolean = false) => {
+    setTimeout(() => {
+      const el = lineRefs.current[index];
+      if (!el) return;
+      el.focus();
+      
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(el);
+      range.collapse(atStart);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }, 0);
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      const selection = window.getSelection();
+      let caretOffset = 0;
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(e.currentTarget);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        caretOffset = preCaretRange.toString().length;
+      }
+      
+      const currentText = lines[index];
+      const leftText = currentText.substring(0, caretOffset);
+      const rightText = currentText.substring(caretOffset);
+      
+      const newLines = [...lines];
+      newLines[index] = leftText;
+      newLines.splice(index + 1, 0, rightText);
+      
+      onChange(newLines.join('\n'));
+      focusLine(index + 1, true);
+    } 
+    else if (e.key === 'Backspace') {
+      const selection = window.getSelection();
+      let caretOffset = 0;
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(e.currentTarget);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        caretOffset = preCaretRange.toString().length;
+      }
+
+      if (caretOffset === 0 && index > 0) {
+        e.preventDefault();
+        const currentText = lines[index];
+        const prevText = lines[index - 1];
+        
+        const newLines = [...lines];
+        newLines[index - 1] = prevText + currentText;
+        newLines.splice(index, 1);
+        
+        onChange(newLines.join('\n'));
+        focusLine(index - 1, false);
+      }
+    } 
+    else if (e.key === 'ArrowUp') {
+      if (index > 0) {
+        e.preventDefault();
+        focusLine(index - 1, false);
+      }
+    } 
+    else if (e.key === 'ArrowDown') {
+      if (index < lines.length - 1) {
+        e.preventDefault();
+        focusLine(index + 1, false);
+      }
+    }
+  };
+
+  return (
+    <div className={`live-preview-container-new ${fontStyle}`} style={{ flex: 1, padding: '40px', overflowY: 'auto', backgroundColor: 'var(--bg-card)' }}>
+      {lines.map((line, index) => {
+        let lineClass = "live-editor-line";
+        if (line.startsWith('# ')) lineClass += " live-h1";
+        else if (line.startsWith('## ')) lineClass += " live-h2";
+        else if (line.startsWith('### ')) lineClass += " live-h3";
+        else if (line.startsWith('> ')) lineClass += " live-blockquote";
+        else if (line.startsWith('- ') || line.startsWith('* ')) lineClass += " live-list-item";
+
+        return (
+          <div
+            key={index}
+            ref={el => { lineRefs.current[index] = el; }}
+            className={lineClass}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={e => handleLineChange(index, e.currentTarget.innerText)}
+            onKeyDown={e => handleKeyDown(index, e)}
+          >
+            {line}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function EditorArea({
   notePath,
   initialContent,
@@ -223,34 +351,14 @@ export default function EditorArea({
         )}
 
         {mode === 'live' && (
-          <div 
-            ref={liveContainerRef}
-            className="live-preview-container"
-            onClick={() => setIsFocused(true)}
-          >
-            {isFocused ? (
-              <textarea
-                ref={textareaRef}
-                className={`editor-textarea ${fontStyle}`}
-                style={{ width: '100%', height: '100%', padding: '0', backgroundColor: 'transparent' }}
-                value={content}
-                onChange={handleChange}
-                onBlur={() => setIsFocused(false)}
-                placeholder="Start writing in markdown..."
-                autoFocus
-              />
-            ) : (
-              <div className="markdown-body" style={{ minHeight: '100%' }}>
-                {content.trim() === '' ? (
-                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty document. Click to start writing...</p>
-                ) : (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {preprocessMarkdown(content)}
-                  </ReactMarkdown>
-                )}
-              </div>
-            )}
-          </div>
+          <LiveEditor 
+            content={content}
+            onChange={(val) => {
+              setContent(val);
+              onSave(val);
+            }}
+            fontStyle={fontStyle}
+          />
         )}
       </div>
 

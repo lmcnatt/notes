@@ -21,6 +21,26 @@ interface FileTreeProps {
   onDeleteItem: (path: string) => void;
 }
 
+const getFolderIcon = (name: string, isExpanded: boolean) => {
+  const match = name.match(/^(\p{Extended_Pictographic})/u);
+  if (match) {
+    return <span style={{ fontSize: '16px', marginRight: '4px', display: 'inline-flex', alignItems: 'center' }}>{match[1]}</span>;
+  }
+  return isExpanded ? (
+    <FolderOpen size={18} className="text-accent" style={{ color: 'var(--accent)' }} />
+  ) : (
+    <Folder size={18} className="text-accent" style={{ color: 'var(--accent)' }} />
+  );
+};
+
+const getFolderDisplayName = (name: string): string => {
+  const match = name.match(/^(\p{Extended_Pictographic})/u);
+  if (match) {
+    return name.replace(match[1], '').trim();
+  }
+  return name;
+};
+
 export default function FileTree({
   tree,
   selectedPath,
@@ -142,11 +162,7 @@ export default function FileTree({
               <ChevronRight size={16} className="text-muted" />
             )}
             
-            {isExpanded ? (
-              <FolderOpen size={18} className="text-accent" style={{ color: 'var(--accent)' }} />
-            ) : (
-              <Folder size={18} className="text-accent" style={{ color: 'var(--accent)' }} />
-            )}
+            {getFolderIcon(node.name, isExpanded)}
             
             {isEditing ? (
               <input
@@ -163,7 +179,7 @@ export default function FileTree({
                 onClick={e => e.stopPropagation()}
               />
             ) : (
-              <span className="node-label">{node.name}</span>
+              <span className="node-label">{getFolderDisplayName(node.name)}</span>
             )}
 
             <div className="node-actions" onClick={e => e.stopPropagation()}>
