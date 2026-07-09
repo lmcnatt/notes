@@ -387,20 +387,17 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="relative flex w-screen h-screen overflow-hidden bg-app">
+    <div className="relative flex w-screen h-screen overflow-hidden bg-app-bg">
       {/* Mobile Top Navigation Header */}
-      <div 
-        className="lg:hidden flex items-center justify-between w-full h-14 px-4 border-b border-border z-30 absolute top-0 left-0"
-        style={{ backgroundColor: 'var(--bg-sidebar)' }}
-      >
+      <div className="lg:hidden flex items-center justify-between w-full h-14 px-4 border-b border-border-theme bg-sidebar-bg z-30 absolute top-0 left-0">
         <button 
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 rounded-lg text-main hover:bg-card-hover"
+          className="p-2 -ml-2 rounded-lg text-text-main hover:bg-card-hover"
           title="Open Menu"
         >
           <Menu size={20} />
         </button>
-        <span className="font-semibold text-main text-sm truncate max-w-[200px]">
+        <span className="font-semibold text-text-main text-sm truncate max-w-[200px]">
           {selectedPath ? selectedPath.split('/').pop()?.replace('.md', '') : 'McNatt Notes'}
         </span>
         <div className="w-8 h-8" />
@@ -417,10 +414,11 @@ export default function Dashboard() {
       {/* Sidebar */}
       <div 
         className={`
-          sidebar
+          w-80 min-w-[320px] max-w-[85vw] h-full
+          bg-sidebar-bg border-r border-border-theme
+          flex flex-col
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           fixed lg:relative inset-y-0 left-0 z-50 lg:z-10
-          max-w-[85vw]
           transition-transform duration-200 ease-in-out
         `}
       >

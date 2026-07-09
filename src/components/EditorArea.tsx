@@ -223,8 +223,8 @@ export default function EditorArea({
         )}
 
         {mode === 'split' && (
-          <div className="split-pane-layout">
-            <div className="flex-1 h-full flex flex-col">
+          <div className="flex flex-col lg:flex-row flex-1 w-full h-full overflow-hidden">
+            <div className="flex-1 h-1/2 lg:h-full flex flex-col overflow-hidden">
               <textarea
                 ref={textareaRef}
                 className={`w-full h-full resize-none p-10 bg-transparent text-text-main placeholder-text-muted border-none outline-none focus:ring-0 overflow-y-auto ${fontStyle === 'serif' ? 'font-serif' : 'font-sans'}`}
@@ -234,7 +234,7 @@ export default function EditorArea({
                 autoFocus
               />
             </div>
-            <div className="flex-1 h-full overflow-y-auto p-10 border-l border-border-theme bg-card-bg">
+            <div className="flex-1 h-1/2 lg:h-full overflow-y-auto p-10 border-t lg:border-t-0 lg:border-l border-border-theme bg-card-bg">
               <div className="markdown-body">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                   {preprocessMarkdown(content)}
