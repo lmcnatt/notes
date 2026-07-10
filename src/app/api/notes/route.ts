@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const project = searchParams.get('project') || 'My Book';
+    const project = searchParams.get('project') || '';
 
     const metadata = getAllNodeMetadata(username);
     const tree = getNotesTree(username, project, metadata);

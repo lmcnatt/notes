@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<Theme>('sepia');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeProject, setActiveProject] = useState<string>('My Book');
+  const [activeProject, setActiveProject] = useState<string>('');
   const [projects, setProjects] = useState<{ name: string; emoji: string }[]>([]);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [projectInput, setProjectInput] = useState('');
@@ -60,17 +60,20 @@ export default function Dashboard() {
   const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);
   const latestContent = useRef<string>('');
 
-  // Fetch projects list
+  // Fetch projects list — returns the list so callers can use it synchronously
   const fetchProjects = async () => {
     try {
       const res = await fetch('/api/notes/projects');
       if (res.ok) {
         const data = await res.json();
-        setProjects(data.projects || []);
+        const list = data.projects || [];
+        setProjects(list);
+        return list;
       }
     } catch (err) {
       console.error('Failed to load projects:', err);
     }
+    return [];
   };
 
   // Fetch file tree and user info on mount
@@ -93,15 +96,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     const init = async () => {
-      const savedProj = localStorage.getItem('notes-active-project') || 'My Book';
-      setActiveProject(savedProj);
-      
-      await fetchProjects();
-      await fetchTree(savedProj);
-      
-      const savedPath = localStorage.getItem('notes-selected-path');
-      if (savedPath) {
-        handleSelectNote(savedPath);
+      const projectList = await fetchProjects();
+      const savedProj = localStorage.getItem('notes-active-project') || '';
+      // Only restore saved project if it still exists
+      const validProj = projectList.some((p: { name: string }) => p.name === savedProj) ? savedProj : (projectList[0]?.name || '');
+      setActiveProject(validProj);
+
+      if (validProj) {
+        await fetchTree(validProj);
+        const savedPath = localStorage.getItem('notes-selected-path');
+        if (savedPath) {
+          handleSelectNote(savedPath);
+        }
+      } else {
+        setLoading(false);
       }
     };
     init();
@@ -191,11 +199,7 @@ export default function Dashboard() {
 
   const handleDeleteProject = async (project: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (project === 'My Book') {
-      alert('Cannot delete default project.');
-      return;
-    }
-    if (!confirm(`Are you sure you want to delete the book/project "${project}" and all its notes?`)) {
+    if (!confirm(`Delete project "${project}" and all its notes? This cannot be undone.`)) {
       return;
     }
     try {
@@ -205,9 +209,19 @@ export default function Dashboard() {
         body: JSON.stringify({ name: project }),
       });
       if (res.ok) {
-        await fetchProjects();
+        const remaining = await fetchProjects();
         if (activeProject === project) {
-          await handleSwitchProject('My Book');
+          const next = remaining[0]?.name || '';
+          setActiveProject(next);
+          if (next) {
+            localStorage.setItem('notes-active-project', next);
+            await fetchTree(next);
+          } else {
+            localStorage.removeItem('notes-active-project');
+            setTree([]);
+            setSelectedPath(null);
+            setNoteContent('');
+          }
         }
       } else {
         alert('Failed to delete project');
@@ -504,8 +518,48 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', color: 'var(--text-muted)' }}>
+      <div className="flex h-screen items-center justify-center bg-[var(--bg-app)] text-[var(--text-muted)]">
         <Loader className="animate-spin" size={32} />
+      </div>
+    );
+  }
+
+  // No projects yet — show a blocking create-first-project prompt
+  if (projects.length === 0) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--bg-app)] px-4">
+        <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-[var(--shadow)] text-center">
+          <div>
+            <div className="[font-family:var(--font-serif)] text-2xl font-bold text-[var(--accent)] mb-1">McNatt Notes</div>
+            <h1 className="text-lg font-semibold text-[var(--text-main)]">Create your first project</h1>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Projects keep your notes organised. Create one to get started.</p>
+          </div>
+          <form
+            onSubmit={handleCreateProject}
+            className="flex flex-col gap-3"
+          >
+            <input
+              type="text"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-app)] px-4 py-2.5 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 outline-none transition-colors focus:border-[var(--accent)]"
+              placeholder="e.g. My Novel"
+              value={projectInput}
+              onChange={e => setProjectInput(e.target.value)}
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-[var(--accent)] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+            >
+              Create Project
+            </button>
+          </form>
+          <button
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+            onClick={handleLogout}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }
@@ -574,16 +628,16 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Project/Book Switcher Button */}
+          {/* Project Switcher Button */}
           <button 
             onClick={() => setShowProjectModal(true)}
             className="flex items-center justify-between w-full px-3 py-2 bg-card-bg border border-border-theme/60 hover:border-accent hover:bg-card-hover rounded-lg text-xs font-bold text-text-main transition shadow-sm"
           >
             <span className="truncate flex items-center gap-2">
               <span className="text-accent text-sm">
-                {projects.find(p => p.name === activeProject)?.emoji || '📚'}
+                {projects.find(p => p.name === activeProject)?.emoji || '📁'}
               </span>
-              {activeProject}
+              {activeProject || 'Select project'}
             </span>
             <ChevronDown size={14} className="text-text-muted opacity-80" />
           </button>
@@ -724,7 +778,6 @@ export default function Dashboard() {
             <div className="text-4xl font-bold font-serif text-border-theme mb-4 tracking-widest uppercase">McNatt Notes</div>
             <p className="text-sm text-text-muted max-w-sm leading-relaxed">Select a note from the sidebar or create a new one to start writing.</p>
           </div>
-        )}
       </div>
 
       {/* Dialog Modals */}
@@ -797,7 +850,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card-bg border border-border-theme w-full max-w-md rounded-xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="text-lg font-bold text-text-main flex items-center justify-between">
-              <span>My Books & Projects</span>
+              <span>My Projects</span>
               <button 
                 className="text-xs font-semibold text-text-muted hover:text-text-main"
                 onClick={() => {
@@ -833,19 +886,17 @@ export default function Dashboard() {
                         setEditEmojiInput(proj.emoji || '');
                       }}
                       className={`p-1 rounded transition ${proj.name === activeProject ? 'text-white/85 hover:text-white hover:bg-white/15' : 'text-text-muted hover:text-accent hover:bg-card-hover'}`}
-                      title="Edit book settings"
+                      title="Edit project settings"
                     >
                       <FileEdit size={12} />
                     </button>
-                    {proj.name !== 'My Book' && (
-                      <button
+                    <button
                         onClick={(e) => handleDeleteProject(proj.name, e)}
                         className={`p-1 rounded transition ${proj.name === activeProject ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'}`}
-                        title="Delete book"
+                        title="Delete project"
                       >
                         <Trash2 size={12} />
                       </button>
-                    )}
                   </div>
                 </div>
               ))}
@@ -853,10 +904,10 @@ export default function Dashboard() {
 
             {editingProject ? (
               <form onSubmit={handleEditProjectSubmit} className="space-y-3 pt-2 border-t border-border-theme/40">
-                <div className="text-xs font-bold text-accent uppercase tracking-wider">Edit Book / Project</div>
+                <div className="text-xs font-bold text-accent uppercase tracking-wider">Edit Project</div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-muted uppercase">Book Emoji</label>
+                  <label className="text-[10px] font-bold text-text-muted uppercase">Project Emoji</label>
                   <div className="flex flex-wrap gap-1.5 p-1.5 bg-app-bg/40 border border-border-theme/60 rounded-lg">
                     {['📚', '📖', '📓', '✍️', '🖋️', '🧠', '🎨', '📜', '🔮', '⚔️', '🚀', '🕵️'].map(emo => (
                       <button
@@ -880,11 +931,11 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-muted uppercase">Book Title</label>
+                  <label className="text-[10px] font-bold text-text-muted uppercase">Project Name</label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
-                    placeholder="Book Name"
+                    placeholder="Project Name"
                     value={editNameInput}
                     onChange={e => setEditNameInput(e.target.value)}
                     autoFocus
@@ -909,7 +960,7 @@ export default function Dashboard() {
               </form>
             ) : (
               <form onSubmit={handleCreateProject} className="space-y-2 pt-2 border-t border-border-theme/40">
-                <label className="text-xs font-semibold text-text-muted">Start a New Book / Project</label>
+                <label className="text-xs font-semibold text-text-muted">New Project</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
