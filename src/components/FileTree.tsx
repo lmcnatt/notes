@@ -178,8 +178,10 @@ export default function FileTree({
 
   const finishRename = (node: FileNode) => {
     if (editName.trim() && editName !== node.name.replace('.md', '')) {
+      // Replace forward slash with fraction slash (⁄ U+2044) to prevent unintended folder creation
+      const safeName = editName.replace(/\//g, '\u2044');
       const parent = node.relativePath.substring(0, node.relativePath.lastIndexOf('/'));
-      const newRelativePath = parent ? `${parent}/${editName}` : editName;
+      const newRelativePath = parent ? `${parent}/${safeName}` : safeName;
       onRenameItem(node.relativePath, newRelativePath);
     }
     setEditingPath(null);

@@ -98,7 +98,7 @@ export function writeNote(username: string, relativePath: string, content: strin
 }
 
 export function createItem(username: string, parentPath: string, name: string, type: 'file' | 'directory'): string {
-  const cleanName = name.replace(/[\/\\?%*:|"<>]/g, '-'); // Sanitize filename
+  const cleanName = name.replace(/[\\?%*:|"<>]/g, '-').replace(/\//g, '\u2044'); // Sanitize filename (/ → ⁄ fraction slash)
   const finalName = type === 'file' ? (cleanName.endsWith('.md') ? cleanName : `${cleanName}.md`) : cleanName;
   
   const relPath = path.join(parentPath, finalName);
