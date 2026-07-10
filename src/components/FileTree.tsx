@@ -9,7 +9,8 @@ import {
   Edit3, 
   ChevronRight, 
   ChevronDown,
-  Smile 
+  Smile,
+  MoreHorizontal
 } from 'lucide-react';
 import { FileNode } from '@/lib/notes';
 import { useEffect } from 'react';
@@ -62,6 +63,7 @@ export default function FileTree({
   const [draggedOverPath, setDraggedOverPath] = useState<string | null>(null);
   const [activeEmojiPickerPath, setActiveEmojiPickerPath] = useState<string | null>(null);
   const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('notes-expanded-folders');
@@ -77,6 +79,7 @@ export default function FileTree({
   useEffect(() => {
     const handleGlobalClick = () => {
       setActiveEmojiPickerPath(null);
+      setMobileMenuPath(null);
     };
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
@@ -240,35 +243,49 @@ export default function FileTree({
               <span className="text-sm truncate select-none">{getFolderDisplayName(node.name)}</span>
             )}
 
-            <div className="invisible group-hover:visible flex items-center gap-1 ml-auto pl-2" onClick={e => e.stopPropagation()}>
-              <button 
-                className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
-                title="New Note"
-                onClick={() => onCreateItem('file', node.relativePath)}
+            <div className="ml-auto pl-1 flex items-center" onClick={e => e.stopPropagation()}>
+              {/* ⋮ button — mobile only, always visible */}
+              <button
+                className="lg:hidden p-1.5 rounded text-text-muted active:text-text-main transition"
+                onClick={e => { e.stopPropagation(); setMobileMenuPath(prev => prev === node.relativePath ? null : node.relativePath); }}
               >
-                <Plus size={12} />
+                <MoreHorizontal size={15} />
               </button>
-              <button 
-                className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
-                title="New Subfolder"
-                onClick={() => onCreateItem('directory', node.relativePath)}
+              {/* Actions: appear on hover (desktop) or when ⋮ tapped (mobile) */}
+              <div
+                className={`flex items-center gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:transition-opacity ${
+                  mobileMenuPath === node.relativePath ? 'flex' : 'hidden lg:flex'
+                }`}
               >
-                <FolderPlus size={12} />
-              </button>
-              <button 
-                className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
-                title="Rename folder"
-                onClick={e => startRename(node, e)}
-              >
-                <Edit3 size={12} />
-              </button>
-              <button 
-                className="p-1 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded transition"
-                title="Delete folder"
-                onClick={() => onDeleteItem(node.relativePath)}
-              >
-                <Trash size={12} />
-              </button>
+                <button
+                  className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
+                  title="New Note"
+                  onClick={() => { onCreateItem('file', node.relativePath); setMobileMenuPath(null); }}
+                >
+                  <Plus size={12} />
+                </button>
+                <button
+                  className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
+                  title="New Subfolder"
+                  onClick={() => { onCreateItem('directory', node.relativePath); setMobileMenuPath(null); }}
+                >
+                  <FolderPlus size={12} />
+                </button>
+                <button
+                  className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
+                  title="Rename folder"
+                  onClick={e => { startRename(node, e); setMobileMenuPath(null); }}
+                >
+                  <Edit3 size={12} />
+                </button>
+                <button
+                  className="p-1 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded transition"
+                  title="Delete folder"
+                  onClick={() => { onDeleteItem(node.relativePath); setMobileMenuPath(null); }}
+                >
+                  <Trash size={12} />
+                </button>
+              </div>
             </div>
           </div>
           
@@ -316,21 +333,35 @@ export default function FileTree({
             <span className="text-sm truncate select-none">{node.name.replace('.md', '')}</span>
           )}
 
-          <div className="invisible group-hover:visible flex items-center gap-1 ml-auto pl-2" onClick={e => e.stopPropagation()}>
-            <button 
-              className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
-              title="Rename file"
-              onClick={e => startRename(node, e)}
+          <div className="ml-auto pl-1 flex items-center" onClick={e => e.stopPropagation()}>
+            {/* ⋮ button — mobile only, always visible */}
+            <button
+              className="lg:hidden p-1.5 rounded text-text-muted active:text-text-main transition"
+              onClick={e => { e.stopPropagation(); setMobileMenuPath(prev => prev === node.relativePath ? null : node.relativePath); }}
             >
-              <Edit3 size={12} />
+              <MoreHorizontal size={15} />
             </button>
-            <button 
-              className="p-1 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded transition"
-              title="Delete file"
-              onClick={() => onDeleteItem(node.relativePath)}
+            {/* Actions: appear on hover (desktop) or when ⋮ tapped (mobile) */}
+            <div
+              className={`flex items-center gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:transition-opacity ${
+                mobileMenuPath === node.relativePath ? 'flex' : 'hidden lg:flex'
+              }`}
             >
-              <Trash size={12} />
-            </button>
+              <button
+                className="p-1 text-text-muted hover:text-accent hover:bg-card-bg rounded transition"
+                title="Rename file"
+                onClick={e => { startRename(node, e); setMobileMenuPath(null); }}
+              >
+                <Edit3 size={12} />
+              </button>
+              <button
+                className="p-1 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded transition"
+                title="Delete file"
+                onClick={() => { onDeleteItem(node.relativePath); setMobileMenuPath(null); }}
+              >
+                <Trash size={12} />
+              </button>
+            </div>
           </div>
         </div>
       );
