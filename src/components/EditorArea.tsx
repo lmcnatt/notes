@@ -153,7 +153,7 @@ export default function EditorArea({
               title="Markdown Source"
             >
               <FileEdit size={12} />
-              <span className="hidden xs:inline">Source</span>
+              <span className="hidden sm:inline">Source</span>
             </button>
             <button 
               className={`
@@ -164,7 +164,7 @@ export default function EditorArea({
               title="Split Screen"
             >
               <Columns size={12} />
-              <span className="hidden xs:inline">Split</span>
+              <span className="hidden sm:inline">Split</span>
             </button>
             <button 
               className={`
@@ -175,7 +175,7 @@ export default function EditorArea({
               title="Live Preview"
             >
               <Eye size={12} />
-              <span className="hidden xs:inline">Live Preview</span>
+              <span className="hidden sm:inline">Live Preview</span>
             </button>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function EditorArea({
         {mode === 'live' && (
           <div 
             ref={liveContainerRef}
-            className="flex-1 h-full overflow-y-auto p-10 bg-card-bg cursor-text"
+            className="flex-1 h-full overflow-y-auto p-6 sm:p-10 bg-card-bg cursor-text"
             onClick={() => setIsFocused(true)}
           >
             {isFocused ? (
@@ -250,11 +250,11 @@ export default function EditorArea({
       </div>
 
       {/* Stats Footer */}
-      <div className="h-10 border-t border-border-theme bg-card-bg flex items-center justify-between px-6 text-xs text-text-muted select-none">
-        <div className="flex items-center gap-4">
+      <div className="h-10 border-t border-border-theme bg-card-bg flex items-center justify-between px-3 sm:px-6 text-xs text-text-muted select-none">
+        <div className="flex items-center gap-2 sm:gap-4">
           <span>{wordCount} words</span>
-          <span>{charCount} characters</span>
-          <span>{readTime} min read</span>
+          <span className="hidden sm:inline">{charCount} characters</span>
+          <span className="hidden sm:inline">{readTime} min read</span>
         </div>
 
         {wordGoal > 0 && (

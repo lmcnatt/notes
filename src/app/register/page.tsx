@@ -55,7 +55,7 @@ export default function RegisterPage() {
         {/* Header */}
         <div className="flex flex-col items-center gap-1.5 text-center">
           <span className="[font-family:var(--font-serif)] text-3xl font-bold text-[var(--accent)]">
-            McNatt Notes
+            McNotes
           </span>
           <h1 className="text-xl font-semibold text-[var(--text-main)]">Create Account</h1>
           <p className="text-sm text-[var(--text-muted)]">Start writing your outlines and stories</p>

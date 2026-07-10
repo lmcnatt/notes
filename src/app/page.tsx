@@ -540,7 +540,7 @@ export default function Dashboard() {
       <div className="flex h-screen items-center justify-center bg-[var(--bg-app)] px-4">
         <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-[var(--shadow)] text-center">
           <div>
-            <div className="[font-family:var(--font-serif)] text-2xl font-bold text-[var(--accent)] mb-1">McNatt Notes</div>
+            <div className="[font-family:var(--font-serif)] text-2xl font-bold text-[var(--accent)] mb-1">McNotes</div>
             <h1 className="text-lg font-semibold text-[var(--text-main)]">Create your first project</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)]">Projects keep your notes organised. Create one to get started.</p>
           </div>
@@ -586,7 +586,7 @@ export default function Dashboard() {
           <Menu size={20} />
         </button>
         <span className="font-semibold text-text-main text-sm truncate max-w-[200px]">
-          {selectedPath ? selectedPath.split('/').pop()?.replace('.md', '') : 'McNatt Notes'}
+          {selectedPath ? selectedPath.split('/').pop()?.replace('.md', '') : 'McNotes'}
         </span>
         <div className="w-8 h-8" />
       </div>
@@ -612,7 +612,7 @@ export default function Dashboard() {
       >
         <div className="flex flex-col p-4 border-b border-border-theme bg-sidebar-bg gap-2">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-bold font-serif text-accent tracking-tight">McNatt Notes</div>
+            <div className="text-lg font-bold font-serif text-accent tracking-tight">McNotes</div>
             <div className="flex gap-1">
               <button 
                 className={`p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-card-hover transition ${theme === 'sepia' ? 'bg-card-bg text-accent border border-border-theme/40 shadow-sm' : ''}`}
@@ -661,7 +661,7 @@ export default function Dashboard() {
                   onClick={() => { setShowProjectDropdown(false); setEditingProject(null); }}
                 />
                 {/* Dropdown panel */}
-                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-card-bg border border-border-theme rounded-xl shadow-xl overflow-hidden">
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-card-bg border border-border-theme rounded-xl shadow-xl flex flex-col max-h-[70dvh] overflow-hidden">
                   {editingProject ? (
                     /* ── Edit project form ── */
                     <form onSubmit={handleEditProjectSubmit} className="p-3 space-y-3">
@@ -712,7 +712,7 @@ export default function Dashboard() {
                   ) : (
                     /* ── Project list + create form ── */
                     <>
-                      <div className="max-h-52 overflow-y-auto py-1">
+                      <div className="flex-1 overflow-y-auto py-1 min-h-0">
                         {projects.map(proj => (
                           <div
                             key={proj.name}
@@ -727,7 +727,7 @@ export default function Dashboard() {
                               <span className="text-base">{proj.emoji || '📁'}</span>
                               {proj.name}
                             </span>
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
                               <button
                                 className="p-1 rounded text-text-muted hover:text-accent hover:bg-card-bg transition"
                                 title="Edit"
@@ -746,7 +746,7 @@ export default function Dashboard() {
                           </div>
                         ))}
                       </div>
-                      <div className="border-t border-border-theme/40 p-2">
+                      <div className="border-t border-border-theme/40 p-2 shrink-0">
                         <form onSubmit={handleCreateProject} className="flex gap-1.5">
                           <input
                             type="text"
@@ -909,7 +909,7 @@ export default function Dashboard() {
           )
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-app-bg select-none">
-            <div className="text-4xl font-bold font-serif text-border-theme mb-4 tracking-widest uppercase">McNatt Notes</div>
+            <div className="text-4xl font-bold font-serif text-border-theme mb-4 tracking-widest uppercase">McNotes</div>
             <p className="text-sm text-text-muted max-w-sm leading-relaxed">Select a note from the sidebar or create a new one to start writing.</p>
           </div>
         )}
