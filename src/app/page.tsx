@@ -40,8 +40,9 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<string>('');
   const [projects, setProjects] = useState<{ name: string; emoji: string }[]>([]);
-  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [projectInput, setProjectInput] = useState('');
+  const [projectEmojiInput, setProjectEmojiInput] = useState('');
   const [editingProject, setEditingProject] = useState<{ name: string; emoji: string } | null>(null);
   const [editNameInput, setEditNameInput] = useState('');
   const [editEmojiInput, setEditEmojiInput] = useState('');
@@ -139,7 +140,7 @@ export default function Dashboard() {
     localStorage.removeItem('notes-selected-path');
     setNoteContent('');
     await fetchTree(project);
-    setShowProjectModal(false);
+    setShowProjectDropdown(false);
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -153,8 +154,17 @@ export default function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
+        // Save emoji if provided
+        if (projectEmojiInput.trim()) {
+          await fetch('/api/notes/projects', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldName: data.name, emoji: projectEmojiInput.trim() }),
+          });
+        }
         await fetchProjects();
         setProjectInput('');
+        setProjectEmojiInput('');
         await handleSwitchProject(data.name);
       } else {
         const data = await res.json();
@@ -628,20 +638,145 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Project Switcher Button */}
-          <button 
-            onClick={() => setShowProjectModal(true)}
-            className="flex items-center justify-between w-full px-3 py-2 bg-card-bg border border-border-theme/60 hover:border-accent hover:bg-card-hover rounded-lg text-xs font-bold text-text-main transition shadow-sm"
-          >
-            <span className="truncate flex items-center gap-2">
-              <span className="text-accent text-sm">
-                {projects.find(p => p.name === activeProject)?.emoji || '📁'}
+          {/* Project Switcher Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowProjectDropdown(v => !v); setEditingProject(null); }}
+              className="flex items-center justify-between w-full px-3 py-2 bg-card-bg border border-border-theme/60 hover:border-accent hover:bg-card-hover rounded-lg text-xs font-bold text-text-main transition shadow-sm"
+            >
+              <span className="truncate flex items-center gap-2">
+                <span className="text-sm">
+                  {projects.find(p => p.name === activeProject)?.emoji || '📁'}
+                </span>
+                {activeProject || 'Select project'}
               </span>
-              {activeProject || 'Select project'}
-            </span>
-            <ChevronDown size={14} className="text-text-muted opacity-80" />
-          </button>
-        </div>
+              <ChevronDown size={14} className={`text-text-muted transition-transform duration-150 ${showProjectDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showProjectDropdown && (
+              <>
+                {/* Click-outside backdrop */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => { setShowProjectDropdown(false); setEditingProject(null); }}
+                />
+                {/* Dropdown panel */}
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-card-bg border border-border-theme rounded-xl shadow-xl overflow-hidden">
+                  {editingProject ? (
+                    /* ── Edit project form ── */
+                    <form onSubmit={handleEditProjectSubmit} className="p-3 space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <button
+                          type="button"
+                          className="text-xs text-text-muted hover:text-text-main transition"
+                          onClick={() => setEditingProject(null)}
+                        >
+                          ← Back
+                        </button>
+                        <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Edit Project</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className="w-16 px-2 py-1.5 text-lg text-center bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg focus:outline-none transition"
+                          placeholder="📁"
+                          value={editEmojiInput}
+                          onChange={e => setEditEmojiInput(e.target.value)}
+                          title="Paste any emoji here"
+                        />
+                        <input
+                          type="text"
+                          className="flex-1 px-3 py-1.5 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
+                          placeholder="Project name"
+                          value={editNameInput}
+                          onChange={e => setEditNameInput(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 text-xs font-semibold text-text-muted hover:text-text-main transition"
+                          onClick={() => setEditingProject(null)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-3 py-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    /* ── Project list + create form ── */
+                    <>
+                      <div className="max-h-52 overflow-y-auto py-1">
+                        {projects.map(proj => (
+                          <div
+                            key={proj.name}
+                            onClick={() => handleSwitchProject(proj.name)}
+                            className={`group flex items-center justify-between px-3 py-2 cursor-pointer transition select-none ${
+                              proj.name === activeProject
+                                ? 'bg-accent/10 text-accent font-semibold'
+                                : 'hover:bg-card-hover text-text-main'
+                            }`}
+                          >
+                            <span className="truncate text-sm flex items-center gap-2">
+                              <span className="text-base">{proj.emoji || '📁'}</span>
+                              {proj.name}
+                            </span>
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                              <button
+                                className="p-1 rounded text-text-muted hover:text-accent hover:bg-card-bg transition"
+                                title="Edit"
+                                onClick={() => { setEditingProject(proj); setEditNameInput(proj.name); setEditEmojiInput(proj.emoji || ''); }}
+                              >
+                                <FileEdit size={12} />
+                              </button>
+                              <button
+                                className="p-1 rounded text-text-muted hover:text-red-500 hover:bg-red-500/10 transition"
+                                title="Delete"
+                                onClick={(e) => handleDeleteProject(proj.name, e)}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-border-theme/40 p-2">
+                        <form onSubmit={handleCreateProject} className="flex gap-1.5">
+                          <input
+                            type="text"
+                            className="w-10 px-1 py-1.5 text-lg text-center bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg focus:outline-none transition"
+                            placeholder="📁"
+                            value={projectEmojiInput}
+                            onChange={e => setProjectEmojiInput(e.target.value)}
+                            title="Emoji (optional)"
+                          />
+                          <input
+                            type="text"
+                            className="flex-1 px-2 py-1.5 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
+                            placeholder="New project name"
+                            value={projectInput}
+                            onChange={e => setProjectInput(e.target.value)}
+                          />
+                          <button
+                            type="submit"
+                            className="px-3 py-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shrink-0"
+                          >
+                            Add
+                          </button>
+                        </form>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
 
 
@@ -846,141 +981,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Project Switcher Modal */}
-      {showProjectModal && (
-        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card-bg border border-border-theme w-full max-w-md rounded-xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="text-lg font-bold text-text-main flex items-center justify-between">
-              <span>My Projects</span>
-              <button 
-                className="text-xs font-semibold text-text-muted hover:text-text-main"
-                onClick={() => {
-                  setShowProjectModal(false);
-                  setEditingProject(null);
-                }}
-              >
-                Close
-              </button>
-            </div>
-            
-            <div className="max-h-48 overflow-y-auto border border-border-theme/40 rounded-lg p-1.5 space-y-1 bg-app-bg/25">
-              {projects.map(proj => (
-                <div 
-                  key={proj.name}
-                  onClick={() => handleSwitchProject(proj.name)}
-                  className={`
-                    flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition select-none
-                    ${proj.name === activeProject ? 'bg-accent text-white font-semibold' : 'hover:bg-card-hover text-text-main'}
-                  `}
-                >
-                  <span className="truncate text-sm flex items-center gap-2">
-                    <span className="text-base select-none">{proj.emoji || '📖'}</span>
-                    {proj.name}
-                  </span>
-                  
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingProject(proj);
-                        setEditNameInput(proj.name);
-                        setEditEmojiInput(proj.emoji || '');
-                      }}
-                      className={`p-1 rounded transition ${proj.name === activeProject ? 'text-white/85 hover:text-white hover:bg-white/15' : 'text-text-muted hover:text-accent hover:bg-card-hover'}`}
-                      title="Edit project settings"
-                    >
-                      <FileEdit size={12} />
-                    </button>
-                    <button
-                        onClick={(e) => handleDeleteProject(proj.name, e)}
-                        className={`p-1 rounded transition ${proj.name === activeProject ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'}`}
-                        title="Delete project"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {editingProject ? (
-              <form onSubmit={handleEditProjectSubmit} className="space-y-3 pt-2 border-t border-border-theme/40">
-                <div className="text-xs font-bold text-accent uppercase tracking-wider">Edit Project</div>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-muted uppercase">Project Emoji</label>
-                  <div className="flex flex-wrap gap-1.5 p-1.5 bg-app-bg/40 border border-border-theme/60 rounded-lg">
-                    {['📚', '📖', '📓', '✍️', '🖋️', '🧠', '🎨', '📜', '🔮', '⚔️', '🚀', '🕵️'].map(emo => (
-                      <button
-                        key={emo}
-                        type="button"
-                        onClick={() => setEditEmojiInput(emo)}
-                        className={`w-7 h-7 flex items-center justify-center rounded text-base hover:bg-card-hover transition ${editEmojiInput === emo ? 'bg-accent/20 border border-accent/50 text-accent font-semibold' : ''}`}
-                      >
-                        {emo}
-                      </button>
-                    ))}
-                    <input
-                      type="text"
-                      maxLength={2}
-                      className="w-10 h-7 text-center bg-card-bg border border-border-theme rounded text-sm focus:outline-none"
-                      placeholder="Custom"
-                      value={editEmojiInput}
-                      onChange={e => setEditEmojiInput(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-muted uppercase">Project Name</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
-                    placeholder="Project Name"
-                    value={editNameInput}
-                    onChange={e => setEditNameInput(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setEditingProject(null)}
-                    className="px-3 py-1.5 text-xs font-semibold text-text-muted hover:text-text-main transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shadow-sm"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleCreateProject} className="space-y-2 pt-2 border-t border-border-theme/40">
-                <label className="text-xs font-semibold text-text-muted">New Project</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 px-3 py-2 bg-app-bg border border-border-theme hover:border-accent focus:border-accent rounded-lg text-sm text-text-main focus:outline-none transition"
-                    placeholder="e.g. My Sci-Fi Novel"
-                    value={projectInput}
-                    onChange={e => setProjectInput(e.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent-hover rounded-lg transition shadow-sm"
-                  >
-                    Create
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
       )}
     </div>
   );
