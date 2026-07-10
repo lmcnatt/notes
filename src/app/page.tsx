@@ -834,7 +834,7 @@ export default function Dashboard() {
               <button 
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold bg-accent text-white hover:bg-accent-hover rounded-lg transition shadow-sm"
                 onClick={() => {
-                  setTargetPath(getActiveFolder());
+                  setTargetPath(getActiveFolder() || activeProject);
                   setModalType('create_file');
                 }}
               >
@@ -844,7 +844,7 @@ export default function Dashboard() {
               <button 
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold bg-card-bg border border-border-theme hover:border-accent text-text-main hover:bg-card-hover rounded-lg transition"
                 onClick={() => {
-                  setTargetPath(getActiveFolder());
+                  setTargetPath(getActiveFolder() || activeProject);
                   setModalType('create_folder');
                 }}
               >
