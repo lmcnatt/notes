@@ -777,8 +777,7 @@ export default function Dashboard() {
               </>
             )}
           </div>
-
-
+        </div>
 
         {/* Global Search */}
         <div className="p-4 border-b border-border-theme bg-sidebar-bg/20">
