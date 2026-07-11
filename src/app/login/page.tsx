@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -49,9 +50,17 @@ export default function LoginPage() {
 
         {/* Header */}
         <div className="flex flex-col items-center gap-1.5 text-center">
-          <span className="[font-family:var(--font-serif)] text-3xl font-bold text-[var(--accent)]">
-            McNotes
-          </span>
+          <div className="flex items-center gap-[0.04rem]">
+            <Image
+              src="/branding/logos/mcnotes-app-badge.png"
+              alt="McNotes badge"
+              width={52}
+              height={52}
+              className="h-[3.2rem] w-[3.2rem] rounded-2xl object-cover border border-border-theme/70 shadow-sm"
+              priority
+            />
+            <span className="text-[2.28rem] leading-none tracking-[-0.05em] font-semibold text-[#433328] [font-family:var(--font-logo)] -translate-y-[2px] transform">Notes</span>
+          </div>
           <h1 className="text-xl font-semibold text-[var(--text-main)]">Welcome Back</h1>
           <p className="text-sm text-[var(--text-muted)]">Sign in to continue writing your books</p>
         </div>
