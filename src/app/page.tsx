@@ -634,7 +634,7 @@ export default function Dashboard() {
       >
         <div className="flex flex-col p-4 border-b border-border-theme bg-sidebar-bg gap-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-[0.1rem] min-w-0">
+            <div className="flex items-center gap-[0.04rem] min-w-0">
               <Image
                 src="/branding/logos/mcnotes-app-badge.png"
                 alt="McNotes badge"
