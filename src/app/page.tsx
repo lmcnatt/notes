@@ -634,15 +634,15 @@ export default function Dashboard() {
       >
         <div className="flex flex-col p-4 border-b border-border-theme bg-sidebar-bg gap-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <Image
                 src="/branding/logos/mcnotes-app-badge.png"
                 alt="McNotes badge"
-                width={30}
-                height={30}
-                className="h-7 w-7 rounded-lg object-cover border border-border-theme/70"
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded-xl object-cover border border-border-theme/70 shadow-sm"
               />
-              <span className="text-3xl leading-none text-accent [font-family:var(--font-logo)] pt-1">McNotes</span>
+              <span className="text-[2.35rem] leading-none tracking-[-0.06em] font-extrabold text-accent [font-family:var(--font-logo)]">Notes</span>
             </div>
             <div className="flex gap-1">
               <button 
