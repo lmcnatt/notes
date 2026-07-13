@@ -16,5 +16,29 @@ services:
     volumes:
       - mcnotes-data:/data
 
+  # (Optional) Reverse proxy with automatic HTTPS.
+  # Uncomment this service and set DOMAIN below to expose McNotes on the internet.
+  # Requires your domain's DNS A record to point to this server's IP.
+  # Caddy auto-renews HTTPS certificates and works on any platform.
+  #
+  # caddy:
+  #   image: caddy:latest
+  #   container_name: mcnotes-caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   environment:
+  #     # Set this to your domain (e.g., notes.example.com)
+  #     DOMAIN: ${DOMAIN:-localhost}
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy-data:/data
+  #     - caddy-config:/config
+  #   depends_on:
+  #     - mcnotes
+
 volumes:
   mcnotes-data:
+  # caddy-data:
+  # caddy-config:

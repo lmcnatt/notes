@@ -1,0 +1,4 @@
+{env}
+{$DOMAIN:localhost} {
+  reverse_proxy mcnotes:3010
+}
