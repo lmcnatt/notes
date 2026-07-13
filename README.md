@@ -14,19 +14,17 @@ markdown files you own.
 
 ## Getting Started (5 minutes)
 
-### Step 1: Get the files
+### Step 1: Get the docker-compose file
 
 ```bash
 mkdir mcnotes && cd mcnotes
 curl -O https://raw.githubusercontent.com/lmcnatt/notes/main/docker-compose.yml
 curl -O https://raw.githubusercontent.com/lmcnatt/notes/main/Caddyfile
-curl -O https://raw.githubusercontent.com/lmcnatt/notes/main/.env.example -O .env
 ```
 
-Or clone the entire repo:
+Or clone the repo:
 ```bash
 git clone https://github.com/lmcnatt/notes.git && cd notes
-cp .env.example .env
 ```
 
 ### Step 2: Start locally (no domain needed)
@@ -41,25 +39,24 @@ That's it. Your notes are stored in `mcnotes-data/` (visible on your machine).
 
 ### Step 3: Optional — expose to the internet with a domain
 
-If you want to access McNotes from anywhere (using a domain like `notes.example.com`):
+If you want to access McNotes from anywhere using a domain (like `notes.example.com`):
 
-**3a. Point your domain's DNS to your server**
+**3a. Edit docker-compose.yml**
+
+Uncomment the `caddy` service (lines 21–44) and set your domain:
+
+```yaml
+caddy:
+  # ... uncomment this section
+  environment:
+    DOMAIN: notes.example.com  # Change to your domain
+```
+
+**3b. Point your domain's DNS to your server**
 
 In your domain registrar (GoDaddy, Cloudflare, Route53, etc.), create an **A record**:
 ```
 notes.example.com  A  <your-server-ip>
-```
-
-**3b. Enable Caddy in docker-compose.yml**
-
-Uncomment the `caddy` service (lines 20–40) and set `DOMAIN` in `.env`:
-
-```bash
-# Edit .env
-DOMAIN=notes.example.com
-
-# Or set it inline
-docker compose --env-file .env up -d
 ```
 
 **3c. Restart**
@@ -75,15 +72,13 @@ Caddy automatically generates HTTPS certificates (Let's Encrypt). Your app is no
 
 ## Configuration
 
-All settings are in `.env`. See [`.env.example`](.env.example) for all options.
+All settings are in `docker-compose.yml` environment section. Common options:
 
-| Variable             | Default        | What it does                                                                                  |
-| -------------------- | -------------- | --------------------------------------------------------------------------------------------- |
-| `DOMAIN`             | (not set)      | If set and Caddy is enabled, exposes the app at `https://DOMAIN` with auto-HTTPS.            |
-| `ALLOW_REGISTRATION` | `false`        | Toggle public self-registration. First account is always allowed (bootstraps the admin).     |
-| `JWT_SECRET`         | auto-generated | Secret for session tokens. Auto-generated on first run if unset.                              |
-| `PORT`               | `3010`         | Port the app listens on (used by Caddy or direct access).                                    |
-| `DATA_DIR`           | `/data`        | Where the database and user files are stored (inside container).                             |
+| Option                | Default    | What it does                                                                  |
+| --------------------- | ---------- | ----------------------------------------------------------------------------- |
+| `JWT_SECRET`          | auto-gen   | Secret for session tokens. Auto-generated on first run if unset.              |
+| `ALLOW_REGISTRATION`  | `"false"`  | Toggle public self-registration. First account always allowed.               |
+| `DOMAIN` (Caddy)      | `localhost` | Your domain for HTTPS. Only used if Caddy service is uncommented.            |
 
 ### Managing users
 

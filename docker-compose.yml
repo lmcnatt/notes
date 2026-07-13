@@ -6,20 +6,26 @@ services:
     ports:
       - "3010:3010"
     environment:
-      # A strong secret is auto-generated and persisted to the data volume on
-      # first run. Set it explicitly to control it yourself (recommended).
-      # JWT_SECRET: "change-me-to-a-long-random-string"
-      #
-      # Set to "true" to allow public self-registration from the start.
-      # The very first account is always allowed and becomes the admin.
-      ALLOW_REGISTRATION: "false"
+      # Optional: JWT secret for session tokens.
+      # If unset, a strong secret is auto-generated and persisted to /data/.jwt_secret.
+      # To use a custom secret: JWT_SECRET=your-long-random-string-here
+      # JWT_SECRET: ""
+      
+      # Optional: Allow public user registration.
+      # The first account is always allowed and becomes admin (even if false).
+      # ALLOW_REGISTRATION: "false"
     volumes:
       - mcnotes-data:/data
 
-  # (Optional) Reverse proxy with automatic HTTPS.
-  # Uncomment this service and set DOMAIN below to expose McNotes on the internet.
-  # Requires your domain's DNS A record to point to this server's IP.
-  # Caddy auto-renews HTTPS certificates and works on any platform.
+  # Optional: Caddy reverse proxy for automatic HTTPS.
+  # To enable:
+  #  1. Uncomment the caddy service below (remove the # from each line)
+  #  2. Set your domain in the DOMAIN environment variable
+  #  3. Point your domain's DNS A record to this server's IP
+  #  4. Run: docker compose up -d
+  #
+  # Caddy will auto-generate and renew HTTPS certificates (Let's Encrypt).
+  # Works on any platform (Linux, macOS, Windows) and with any domain registrar.
   #
   # caddy:
   #   image: caddy:latest
@@ -30,7 +36,7 @@ services:
   #     - "443:443"
   #   environment:
   #     # Set this to your domain (e.g., notes.example.com)
-  #     DOMAIN: ${DOMAIN:-localhost}
+  #     DOMAIN: localhost
   #   volumes:
   #     - ./Caddyfile:/etc/caddy/Caddyfile
   #     - caddy-data:/data
@@ -42,3 +48,4 @@ volumes:
   mcnotes-data:
   # caddy-data:
   # caddy-config:
+
