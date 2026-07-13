@@ -27,7 +27,11 @@ export async function POST(request: Request) {
     // Sign JWT
     const token = await signJWT({ username: cleanUsername });
 
-    const response = NextResponse.json({ success: true, username: cleanUsername });
+    const response = NextResponse.json({
+      success: true,
+      username: cleanUsername,
+      mustChangePassword: !!user.must_change_password,
+    });
     
     // Set cookie
     response.cookies.set({

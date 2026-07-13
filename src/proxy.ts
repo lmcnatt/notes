@@ -60,6 +60,7 @@ export const config = {
     '/login',
     '/register',
     '/settings',
+    '/change-password',
     '/api/:path*',
   ],
 };

@@ -17,6 +17,7 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     is_admin INTEGER NOT NULL DEFAULT 0,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -34,10 +35,13 @@ db.exec(`
   );
 `);
 
-// Lightweight migration: add is_admin to pre-existing databases.
+// Lightweight migrations for pre-existing databases.
 const userColumns = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
 if (!userColumns.some((c) => c.name === 'is_admin')) {
   db.exec('ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0');
+}
+if (!userColumns.some((c) => c.name === 'must_change_password')) {
+  db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0');
 }
 
 // Seed the initial registration setting once, from the environment default.
@@ -51,6 +55,7 @@ export interface User {
   username: string;
   password?: string;
   is_admin: number;
+  must_change_password: number;
   created_at: string;
 }
 
@@ -65,15 +70,41 @@ export function getUserCount(): number {
   return row.count;
 }
 
-export function createUser(username: string, passwordHash: string, isAdmin = false): User {
-  const stmt = db.prepare('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)');
-  const info = stmt.run(username, passwordHash, isAdmin ? 1 : 0);
+export function createUser(
+  username: string,
+  passwordHash: string,
+  isAdmin = false,
+  mustChangePassword = false
+): User {
+  const stmt = db.prepare(
+    'INSERT INTO users (username, password, is_admin, must_change_password) VALUES (?, ?, ?, ?)'
+  );
+  const info = stmt.run(username, passwordHash, isAdmin ? 1 : 0, mustChangePassword ? 1 : 0);
   return {
     id: info.lastInsertRowid as number,
     username,
     is_admin: isAdmin ? 1 : 0,
-    created_at: new Date().toISOString()
+    must_change_password: mustChangePassword ? 1 : 0,
+    created_at: new Date().toISOString(),
   };
+}
+
+export function updateUserPassword(
+  username: string,
+  passwordHash: string,
+  mustChangePassword = false
+): void {
+  db.prepare(
+    'UPDATE users SET password = ?, must_change_password = ? WHERE username = ?'
+  ).run(passwordHash, mustChangePassword ? 1 : 0, username);
+}
+
+export function getAllUsers(): Omit<User, 'password'>[] {
+  return db
+    .prepare(
+      'SELECT id, username, is_admin, must_change_password, created_at FROM users ORDER BY created_at ASC'
+    )
+    .all() as Omit<User, 'password'>[];
 }
 
 export function getSetting(key: string): string | null {

@@ -556,16 +556,15 @@ export default function Dashboard() {
       <div className="flex h-screen items-center justify-center bg-[var(--bg-app)] px-4">
         <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-[var(--shadow)] text-center">
           <div>
-            <div className="mb-3 flex items-center justify-center gap-3">
+            <div className="mb-3 flex items-center justify-center">
               <Image
-                src="/branding/logos/mcnotes-app-badge.png"
+                src="/branding/logos/mcnotes-logo-full-app.svg"
                 alt="McNotes logo"
-                width={44}
-                height={44}
-                className="h-11 w-11 rounded-xl object-cover ring-1 ring-[var(--border)]"
+                width={360}
+                height={116}
+                className="h-auto w-full max-w-[12rem]"
                 priority
               />
-              <span className="text-4xl leading-none text-[var(--accent)] [font-family:var(--font-logo)]">McNotes</span>
             </div>
             <h1 className="text-lg font-semibold text-[var(--text-main)]">Create your first project</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)]">Projects keep your notes organised. Create one to get started.</p>
@@ -612,18 +611,19 @@ export default function Dashboard() {
           <Menu size={20} />
         </button>
         <div className="flex items-center gap-2 min-w-0">
-          {!selectedPath && (
+          {selectedPath ? (
+            <span className="text-sm truncate max-w-[200px] font-semibold text-text-main">
+              {selectedPath.split('/').pop()?.replace('.md', '')}
+            </span>
+          ) : (
             <Image
-              src="/branding/logos/mcnotes-app-badge.png"
+              src="/branding/logos/mcnotes-logo-full-app.svg"
               alt="McNotes"
-              width={24}
-              height={24}
-              className="h-6 w-6 rounded-md object-cover"
+              width={360}
+              height={116}
+              className="h-auto w-full max-w-[7.75rem]"
             />
           )}
-          <span className={`text-sm truncate max-w-[200px] ${selectedPath ? 'font-semibold text-text-main' : 'text-accent [font-family:var(--font-logo)] text-2xl leading-none pt-1'}`}>
-            {selectedPath ? selectedPath.split('/').pop()?.replace('.md', '') : 'McNotes'}
-          </span>
         </div>
         <div className="w-8 h-8" />
       </div>
@@ -652,17 +652,16 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={handleReturnToHome}
-              className="flex items-center gap-[0.04rem] min-w-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="flex items-center min-w-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               title="Return to home"
             >
               <Image
-                src="/branding/logos/mcnotes-app-badge.png"
-                alt="McNotes badge"
-                width={52}
-                height={52}
-                className="h-[3.2rem] w-[3.2rem] rounded-2xl object-cover border border-border-theme/70 shadow-sm"
+                src="/branding/logos/mcnotes-logo-full-app.svg"
+                alt="McNotes logo"
+                width={360}
+                height={116}
+                className="h-auto w-full max-w-[10.5rem]"
               />
-              <span className="text-[2.28rem] leading-none tracking-[-0.05em] font-semibold text-[#433328] [font-family:var(--font-logo)] -translate-y-[2px] transform">Notes</span>
             </button>
             <div className="flex gap-1">
               <button 
@@ -974,14 +973,13 @@ export default function Dashboard() {
             <div className="pointer-events-none absolute -top-20 -left-16 h-60 w-60 rounded-full bg-accent/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -right-16 h-60 w-60 rounded-full bg-accent/15 blur-3xl" />
             <Image
-              src="/branding/logos/mcnotes-wordmark-transparent.svg"
+              src="/branding/logos/mcnotes-logo-full-app.svg"
               alt="McNotes"
-              width={420}
-              height={120}
+              width={360}
+              height={116}
               className="mb-2 w-full max-w-[18rem] sm:max-w-[22rem] h-auto"
               priority
             />
-            <div className="text-4xl sm:text-5xl font-semibold text-[#433328] [font-family:var(--font-logo)] leading-none mb-4">McNotes</div>
             <p className="text-sm text-text-muted max-w-sm leading-relaxed">Select a note from the sidebar or create a new one to start writing.</p>
           </div>
         )}
