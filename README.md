@@ -14,7 +14,25 @@ markdown files you own.
 
 ## Getting Started (5 minutes)
 
-### Step 1: Get the docker-compose file
+### Quickest start (one command)
+
+```bash
+docker run -d \
+  --name mcnotes \
+  -p 3010:3010 \
+  -v mcnotes-data:/data \
+  ghcr.io/lmcnatt/notes:latest
+```
+
+Open <http://localhost:3010>, create your first account (becomes admin), and start writing. Done.
+
+Stop it anytime: `docker stop mcnotes`
+
+---
+
+### Full setup with docker-compose (recommended for production)
+
+**Step 1: Get the docker-compose file**
 
 ```bash
 mkdir mcnotes && cd mcnotes
@@ -27,7 +45,7 @@ Or clone the repo:
 git clone https://github.com/lmcnatt/notes.git && cd notes
 ```
 
-### Step 2: Start locally (no domain needed)
+**Step 2: Start**
 
 ```bash
 docker compose up -d
@@ -35,9 +53,7 @@ docker compose up -d
 
 Open <http://localhost:3010> and create your first account. **This account becomes the admin.**
 
-That's it. Your notes are stored in `mcnotes-data/` (visible on your machine).
-
-### Step 3: Optional — expose to the internet with a domain
+**Step 3: Optional — expose to the internet with a domain**
 
 If you want to access McNotes from anywhere using a domain (like `notes.example.com`):
 
@@ -90,17 +106,13 @@ All settings are in `docker-compose.yml` environment section. Common options:
 
 ## Backups
 
-Your data lives in `mcnotes-data/`. This folder contains everything:
-```
-mcnotes-data/
-├── users.db          # all accounts + metadata
-├── .jwt_secret       # signing key (auto-generated)
-└── users/            # markdown files for each user
-    ├── alice/...
-    └── bob/...
-```
+Your data lives in the `mcnotes-data` Docker volume. 
 
-### Backup to a file (easy)
+**With docker-compose**, the data folder is visible as `mcnotes-data/` (actual files on your machine).
+
+**With `docker run`**, it's a named volume (managed by Docker internally).
+
+### Backup to a file (docker-compose)
 
 ```bash
 # Stop the container
@@ -113,33 +125,67 @@ tar czf mcnotes-backup-$(date +%Y-%m-%d).tar.gz mcnotes-data/
 docker compose start
 ```
 
-### Backup to cloud (AWS S3, etc.)
+### Backup to a file (docker run)
 
 ```bash
-# Install AWS CLI, then sync
-aws s3 sync mcnotes-data s3://my-bucket/mcnotes-backup --delete
+# Stop the container
+docker stop mcnotes
 
-# Or use rclone for other cloud providers
-rclone sync mcnotes-data remote:mcnotes-backup
+# Extract the volume into a tar file
+docker run --rm -v mcnotes-data:/data -v "$PWD:/backup" \
+  alpine tar czf /backup/mcnotes-backup-$(date +%Y-%m-%d).tar.gz -C /data .
+
+# Restart
+docker start mcnotes
+```
+
+### Backup to cloud (AWS S3, etc.)
+
+**With docker-compose:**
+```bash
+aws s3 sync mcnotes-data s3://my-bucket/mcnotes-backup --delete
+```
+
+**With `docker run`:**
+```bash
+docker run --rm -v mcnotes-data:/data -v ~/.aws:/root/.aws \
+  amazon/aws-cli s3 sync /data s3://my-bucket/mcnotes-backup --delete
 ```
 
 ### Restore from backup
 
+**With docker-compose:**
 ```bash
-# Stop the container
 docker compose stop
-
-# Extract backup (creates/overwrites mcnotes-data/)
 tar xzf mcnotes-backup-2026-07-13.tar.gz
-
-# Restart
 docker compose start
+```
+
+**With `docker run`:**
+```bash
+docker stop mcnotes
+docker run --rm -v mcnotes-data:/data -v "$PWD:/backup" \
+  alpine tar xzf /backup/mcnotes-backup-2026-07-13.tar.gz -C /data
+docker start mcnotes
 ```
 
 ---
 
 ## Upgrading
 
+**Docker run:**
+```bash
+docker stop mcnotes
+docker rm mcnotes
+docker pull ghcr.io/lmcnatt/notes:latest
+docker run -d \
+  --name mcnotes \
+  -p 3010:3010 \
+  -v mcnotes-data:/data \
+  ghcr.io/lmcnatt/notes:latest
+```
+
+**Docker compose:**
 ```bash
 docker compose pull
 docker compose up -d
@@ -152,24 +198,52 @@ New versions apply database migrations automatically. Your data is safe.
 ## Troubleshooting
 
 ### Container won't start
+
+**Docker run:**
+```bash
+docker logs mcnotes
+```
+
+**Docker compose:**
 ```bash
 docker compose logs mcnotes
 ```
 
 ### Check if it's running
+
 ```bash
 curl http://localhost:3010/api/health
 ```
 
-### Stop everything
+### Stop/restart
+
+**Docker run:**
 ```bash
-docker compose down
+docker stop mcnotes
+docker start mcnotes
+docker rm mcnotes  # to remove permanently
 ```
 
-### Reset (delete all data!)
+**Docker compose:**
+```bash
+docker compose stop
+docker compose start
+docker compose down  # to remove permanently
+```
+
+### Delete all data and start fresh
+
+**Docker run:**
+```bash
+docker stop mcnotes
+docker rm mcnotes
+docker volume rm mcnotes-data
+docker run -d --name mcnotes -p 3010:3010 -v mcnotes-data:/data ghcr.io/lmcnatt/notes:latest
+```
+
+**Docker compose:**
 ```bash
 docker compose down -v
-docker volume rm mcnotes-data
 docker compose up -d
 ```
 
