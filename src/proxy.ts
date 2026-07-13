@@ -9,7 +9,11 @@ export async function proxy(request: NextRequest) {
 
   // Define public paths
   const isPublicPath = path === '/login' || path === '/register';
-  const isAuthApi = path.startsWith('/api/auth');
+  const isPublicAuthApi =
+    path === '/api/auth/login' ||
+    path === '/api/auth/register' ||
+    path === '/api/auth/logout' ||
+    path === '/api/auth/registration-status';
   const isHealthCheck = path === '/api/health';
 
   // Skip auth checks for static assets, public files, health checks, and auth API routes
@@ -17,7 +21,7 @@ export async function proxy(request: NextRequest) {
     path.startsWith('/_next') ||
     path.startsWith('/favicon.ico') ||
     isHealthCheck ||
-    isAuthApi
+    isPublicAuthApi
   ) {
     return NextResponse.next();
   }
