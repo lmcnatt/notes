@@ -157,6 +157,26 @@ body {
   margin-bottom: 4px;
 }
 
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25em 0;
+  border: 1px solid var(--border);
+  background-color: var(--bg-card);
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 0.55em 0.8em;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.markdown-body thead th {
+  border-bottom: 2px solid var(--text-muted);
+  background-color: var(--bg-sidebar);
+}
+
 .markdown-body a, .wiki-link {
   color: var(--accent);
   text-decoration: underline;

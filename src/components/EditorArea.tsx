@@ -5,7 +5,9 @@ import {
   Eye, 
   Columns, 
   FileEdit,
-  Target
+  Target,
+  Undo2,
+  Redo2
 } from 'lucide-react';
 
 interface EditorAreaProps {
@@ -31,21 +33,92 @@ export default function EditorArea({
   const [wordGoal, setWordGoal] = useState<number>(0);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [goalInput, setGoalInput] = useState('');
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const liveContainerRef = useRef<HTMLDivElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const undoStackRef = useRef<string[]>([]);
+  const redoStackRef = useRef<string[]>([]);
 
   // Sync content when initialContent changes (switching notes)
   useEffect(() => {
     setContent(initialContent);
+    undoStackRef.current = [];
+    redoStackRef.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
   }, [initialContent, notePath]);
 
   // Handle changes and trigger auto-save debounce
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
+    if (val !== content) {
+      undoStackRef.current.push(content);
+      // Keep history bounded to avoid unbounded memory growth.
+      if (undoStackRef.current.length > 200) {
+        undoStackRef.current.shift();
+      }
+      redoStackRef.current = [];
+      setCanUndo(undoStackRef.current.length > 0);
+      setCanRedo(false);
+    }
     setContent(val);
     onSave(val);
   };
+
+  const handleUndo = () => {
+    if (undoStackRef.current.length === 0) return;
+    const previous = undoStackRef.current.pop();
+    if (previous === undefined) return;
+
+    redoStackRef.current.push(content);
+    setContent(previous);
+    onSave(previous);
+    setCanUndo(undoStackRef.current.length > 0);
+    setCanRedo(redoStackRef.current.length > 0);
+  };
+
+  const handleRedo = () => {
+    if (redoStackRef.current.length === 0) return;
+    const next = redoStackRef.current.pop();
+    if (next === undefined) return;
+
+    undoStackRef.current.push(content);
+    setContent(next);
+    onSave(next);
+    setCanUndo(undoStackRef.current.length > 0);
+    setCanRedo(redoStackRef.current.length > 0);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      if (!editorContainerRef.current?.contains(target)) return;
+      if (!(target instanceof HTMLTextAreaElement)) return;
+
+      const modifierPressed = e.ctrlKey || e.metaKey;
+      if (!modifierPressed) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [content]);
 
   // Preprocess WikiLinks [[Note Name]] to custom markdown anchors
   // e.g. [[My Note]] -> [My Note](#wikilink-My_Note)
@@ -114,7 +187,7 @@ export default function EditorArea({
   const folderPath = notePath.split('/').slice(0, -1).join(' > ');
 
   return (
-    <div className="flex flex-col flex-1 h-full w-full overflow-hidden bg-card-bg">
+    <div ref={editorContainerRef} className="flex flex-col flex-1 h-full w-full overflow-hidden bg-card-bg">
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-border-theme bg-card-bg z-10">
         <div className="flex items-center gap-1.5 text-xs text-text-muted truncate max-w-full">
@@ -140,6 +213,24 @@ export default function EditorArea({
             }}
           >
             <Target size={16} style={{ color: wordGoal > 0 ? 'var(--accent)' : 'inherit' }} />
+          </button>
+
+          <button
+            className="p-2 text-text-muted hover:text-text-main hover:bg-card-hover rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Undo (Ctrl/Cmd+Z)"
+            onClick={handleUndo}
+            disabled={!canUndo}
+          >
+            <Undo2 size={16} />
+          </button>
+
+          <button
+            className="p-2 text-text-muted hover:text-text-main hover:bg-card-hover rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Redo (Ctrl+Y / Ctrl+Shift+Z / Cmd+Shift+Z)"
+            onClick={handleRedo}
+            disabled={!canRedo}
+          >
+            <Redo2 size={16} />
           </button>
 
           {/* Mode Selector */}
