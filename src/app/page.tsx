@@ -894,7 +894,7 @@ export default function Dashboard() {
               <button 
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold bg-card-bg border border-border-theme hover:border-accent text-text-main hover:bg-card-hover rounded-lg transition"
                 onClick={() => {
-                  setTargetPath(getActiveFolder() || activeProject);
+                  setTargetPath(activeProject);
                   setModalType('create_folder');
                 }}
               >
@@ -907,6 +907,7 @@ export default function Dashboard() {
             <FileTree
               tree={tree}
               selectedPath={selectedPath}
+              rootPath={activeProject}
               onSelect={handleSelectNote}
               onCreateItem={(type, parentPath) => {
                 setTargetPath(parentPath);

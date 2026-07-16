@@ -4,6 +4,10 @@ import { USERS_DIR } from './config';
 
 const BASE_NOTES_DIR = USERS_DIR;
 
+function normalizeRelativePath(relativePath: string): string {
+  return relativePath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+}
+
 export interface FileNode {
   name: string;
   relativePath: string;
@@ -23,9 +27,10 @@ export function getUserDir(username: string): string {
 
 export function resolveUserPath(username: string, relativePath: string): string {
   const userDir = getUserDir(username);
+  const normalizedRelativePath = normalizeRelativePath(relativePath);
   
   // Resolve path and prevent directory traversal
-  const resolvedPath = path.normalize(path.join(userDir, relativePath));
+  const resolvedPath = path.normalize(path.join(userDir, normalizedRelativePath));
   
   if (!resolvedPath.startsWith(userDir)) {
     throw new Error('Access denied: Path traversal detected');
@@ -40,7 +45,8 @@ export function getNotesTree(
   metadata: Record<string, { emoji: string }> = {}
 ): FileNode[] {
   const userDir = getUserDir(username);
-  const targetDir = path.join(userDir, currentDir);
+  const normalizedCurrentDir = normalizeRelativePath(currentDir);
+  const targetDir = path.join(userDir, normalizedCurrentDir);
   
   if (!fs.existsSync(targetDir)) return [];
   
@@ -51,7 +57,7 @@ export function getNotesTree(
     // Ignore hidden files and directories
     if (entry.name.startsWith('.')) continue;
     
-    const relPath = path.join(currentDir, entry.name);
+    const relPath = normalizedCurrentDir ? path.posix.join(normalizedCurrentDir, entry.name) : entry.name;
     const node: FileNode = {
       name: entry.name,
       relativePath: relPath,
@@ -99,10 +105,11 @@ export function writeNote(username: string, relativePath: string, content: strin
 }
 
 export function createItem(username: string, parentPath: string, name: string, type: 'file' | 'directory'): string {
+  const normalizedParentPath = normalizeRelativePath(parentPath);
   const cleanName = name.replace(/[\\?%*:|"<>]/g, '-').replace(/\//g, '\u2044'); // Sanitize filename (/ → ⁄ fraction slash)
   const finalName = type === 'file' ? (cleanName.endsWith('.md') ? cleanName : `${cleanName}.md`) : cleanName;
   
-  const relPath = path.join(parentPath, finalName);
+  const relPath = normalizedParentPath ? path.posix.join(normalizedParentPath, finalName) : finalName;
   const absolutePath = resolveUserPath(username, relPath);
   
   if (fs.existsSync(absolutePath)) {
@@ -119,12 +126,14 @@ export function createItem(username: string, parentPath: string, name: string, t
 }
 
 export function renameItem(username: string, oldPath: string, newPath: string): string {
-  const absoluteOld = resolveUserPath(username, oldPath);
+  const normalizedOldPath = normalizeRelativePath(oldPath);
+  const normalizedNewPath = normalizeRelativePath(newPath);
+  const absoluteOld = resolveUserPath(username, normalizedOldPath);
   
   // Ensure the extension is preserved if it's a markdown file
-  let finalNewPath = newPath;
-  if (fs.statSync(absoluteOld).isFile() && !newPath.endsWith('.md')) {
-    finalNewPath = `${newPath}.md`;
+  let finalNewPath = normalizedNewPath;
+  if (fs.statSync(absoluteOld).isFile() && !normalizedNewPath.endsWith('.md')) {
+    finalNewPath = `${normalizedNewPath}.md`;
   }
   
   const absoluteNew = resolveUserPath(username, finalNewPath);
@@ -175,7 +184,7 @@ export function searchNotes(username: string, query: string): SearchResult[] {
     
     for (const entry of entries) {
       if (entry.name.startsWith('.')) continue;
-      const relPath = path.join(currentDir, entry.name);
+      const relPath = currentDir ? path.posix.join(currentDir, entry.name) : entry.name;
       
       if (entry.isDirectory()) {
         traverse(relPath);

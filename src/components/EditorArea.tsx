@@ -28,8 +28,9 @@ export default function EditorArea({
   saveStatus
 }: EditorAreaProps) {
   const [content, setContent] = useState(initialContent);
-  const [mode, setMode] = useState<EditMode>('split');
+  const [mode, setMode] = useState<EditMode>('source');
   const [isFocused, setIsFocused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [wordGoal, setWordGoal] = useState<number>(0);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [goalInput, setGoalInput] = useState('');
@@ -49,6 +50,15 @@ export default function EditorArea({
     setCanUndo(false);
     setCanRedo(false);
   }, [notePath]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const updateIsMobile = () => setIsMobile(mediaQuery.matches);
+    updateIsMobile();
+    mediaQuery.addEventListener('change', updateIsMobile);
+    return () => mediaQuery.removeEventListener('change', updateIsMobile);
+  }, []);
 
   // Sync external content updates without wiping local undo/redo history.
   useEffect(() => {
@@ -137,6 +147,7 @@ export default function EditorArea({
   const wordCount = getWordCount(content);
   const charCount = getCharCount(content);
   const readTime = Math.ceil(wordCount / 200); // 200 words per minute average
+  const disableHeavyPreview = isMobile && content.length > 120000;
 
   const handleWikiLinkClick = (slug: string) => {
     const originalName = slug.replace(/_/g, ' ');
@@ -297,11 +308,17 @@ export default function EditorArea({
               />
             </div>
             <div className="flex-1 min-h-0 h-1/2 lg:h-full overflow-y-auto p-6 sm:p-10 border-t lg:border-t-0 lg:border-l border-border-theme bg-card-bg">
-              <div className="markdown-body">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                  {preprocessMarkdown(content)}
-                </ReactMarkdown>
-              </div>
+              {disableHeavyPreview ? (
+                <div className="h-full flex items-center justify-center text-sm text-text-muted text-center px-4">
+                  Preview is disabled on mobile for very large files. Use Source mode to edit.
+                </div>
+              ) : (
+                <div className="markdown-body">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {preprocessMarkdown(content)}
+                  </ReactMarkdown>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -327,6 +344,8 @@ export default function EditorArea({
               <div className="markdown-body min-h-full">
                 {content.trim() === '' ? (
                   <p className="text-text-muted italic select-none">Empty document. Click to start writing...</p>
+                ) : disableHeavyPreview ? (
+                  <p className="text-text-muted select-none">Preview is disabled on mobile for very large files. Click to edit the raw markdown.</p>
                 ) : (
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                     {preprocessMarkdown(content)}

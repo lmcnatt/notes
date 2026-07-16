@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 interface FileTreeProps {
   tree: FileNode[];
   selectedPath: string | null;
+  rootPath?: string;
   onSelect: (path: string) => void;
   onCreateItem: (type: 'file' | 'directory', parentPath: string) => void;
   onRenameItem: (oldPath: string, newPath: string) => void;
@@ -51,6 +52,7 @@ const getFolderDisplayName = (name: string): string => {
 export default function FileTree({
   tree,
   selectedPath,
+  rootPath = '',
   onSelect,
   onCreateItem,
   onRenameItem,
@@ -64,6 +66,13 @@ export default function FileTree({
   const [activeEmojiPickerPath, setActiveEmojiPickerPath] = useState<string | null>(null);
   const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
+
+  const normalizePath = (value: string) => value.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  const getParentPath = (value: string) => {
+    const normalized = normalizePath(value);
+    const lastSlash = normalized.lastIndexOf('/');
+    return lastSlash === -1 ? '' : normalized.substring(0, lastSlash);
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('notes-expanded-folders');
@@ -125,15 +134,15 @@ export default function FileTree({
     e.stopPropagation();
     setDraggedOverPath(null);
 
-    const draggedPath = e.dataTransfer.getData('text/plain');
-    if (!draggedPath || draggedPath === targetNode.relativePath) return;
+    const draggedPath = normalizePath(e.dataTransfer.getData('text/plain'));
+    const targetPath = normalizePath(targetNode.relativePath);
+    if (!draggedPath || draggedPath === targetPath) return;
 
     let targetFolder = '';
     if (targetNode.isDirectory) {
-      targetFolder = targetNode.relativePath;
+      targetFolder = targetPath;
     } else {
-      const lastSlash = targetNode.relativePath.lastIndexOf('/');
-      targetFolder = lastSlash === -1 ? '' : targetNode.relativePath.substring(0, lastSlash);
+      targetFolder = getParentPath(targetPath);
     }
 
     if (targetFolder === draggedPath || targetFolder.startsWith(draggedPath + '/')) {
@@ -153,13 +162,17 @@ export default function FileTree({
     e.preventDefault();
     setDraggedOverPath(null);
 
-    const draggedPath = e.dataTransfer.getData('text/plain');
+    const draggedPath = normalizePath(e.dataTransfer.getData('text/plain'));
     if (!draggedPath) return;
 
     if (!draggedPath.includes('/')) return;
 
     const fileName = draggedPath.split('/').pop()!;
-    onRenameItem(draggedPath, fileName);
+    const targetRoot = normalizePath(rootPath);
+    const targetPath = targetRoot ? `${targetRoot}/${fileName}` : fileName;
+    if (draggedPath !== targetPath) {
+      onRenameItem(draggedPath, targetPath);
+    }
   };
 
   const toggleFolder = (path: string) => {
