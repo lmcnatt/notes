@@ -193,27 +193,44 @@ body {
 
 .markdown-body ul, .markdown-body ol {
   margin-bottom: 1.4em;
-  padding-left: 20px;
+  padding-left: 1.6em;
 }
 
 .markdown-body ul {
-  list-style: disc;
+  list-style-type: disc;
 }
 
 .markdown-body ol {
-  list-style: decimal;
+  list-style-type: decimal;
 }
 
 .markdown-body ul ul {
-  list-style: circle;
+  list-style-type: circle;
 }
 
 .markdown-body ul ul ul {
-  list-style: square;
+  list-style-type: square;
 }
 
 .markdown-body li {
   margin-bottom: 4px;
+  display: list-item;
+}
+
+.markdown-body ul > li {
+  list-style-type: disc;
+}
+
+.markdown-body ol > li {
+  list-style-type: decimal;
+}
+
+.markdown-body ul ul > li {
+  list-style-type: circle;
+}
+
+.markdown-body ul ul ul > li {
+  list-style-type: square;
 }
 
 .markdown-body table {
