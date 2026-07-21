@@ -544,7 +544,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[var(--bg-app)] text-[var(--text-muted)]">
+      <div className="flex h-dvh items-center justify-center bg-[var(--bg-app)] text-[var(--text-muted)]">
         <Loader className="animate-spin" size={32} />
       </div>
     );
@@ -553,7 +553,7 @@ export default function Dashboard() {
   // No projects yet — show a blocking create-first-project prompt
   if (projects.length === 0) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[var(--bg-app)] px-4">
+      <div className="flex h-dvh items-center justify-center bg-[var(--bg-app)] px-4">
         <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-[var(--shadow)] text-center">
           <div>
             <div className="mb-3 flex items-center justify-center">
@@ -600,9 +600,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="relative flex w-screen h-screen overflow-hidden bg-app-bg">
+    <div className="relative flex w-screen h-dvh overflow-hidden bg-app-bg">
       {/* Mobile Top Navigation Header */}
-      <div className="lg:hidden flex items-center justify-between w-full h-14 px-4 border-b border-border-theme bg-sidebar-bg z-30 absolute top-0 left-0">
+      <div className="lg:hidden flex items-center justify-between w-full h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-border-theme bg-sidebar-bg z-30 absolute top-0 left-0">
         <button 
           onClick={() => setSidebarOpen(true)}
           className="p-2 -ml-2 rounded-lg text-text-main hover:bg-card-hover"
@@ -642,6 +642,7 @@ export default function Dashboard() {
           w-80 min-w-[320px] max-w-[85vw] h-full
           bg-sidebar-bg border-r border-border-theme
           flex flex-col
+          pt-[env(safe-area-inset-top)] lg:pt-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           fixed lg:relative inset-y-0 left-0 z-50 lg:z-10
           transition-transform duration-200 ease-in-out
@@ -970,7 +971,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Workspace */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden pt-14 lg:pt-0">
+      <div className="flex-1 flex flex-col h-full overflow-hidden pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-0">
         {selectedPath ? (
           loadingNote ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-text-muted">
